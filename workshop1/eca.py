@@ -51,7 +51,7 @@ def main(
 
     print("simulating automaton...")
     start_time = time.perf_counter()
-    history = simulate(
+    history = jax.jit(simulate, static_argnames=('height',))(
         rule=rule,
         init_state=state,
         height=height,
@@ -90,27 +90,38 @@ def simulate(
     # parse initial state
     init_state = init_state.astype(dtype=jnp.uint8)
 
-    state = jnp.pad(init_state, 1, mode='wrap')
+    init_state = jnp.pad(init_state, 1, mode='wrap')
 
     # accumulate output into this list
-    history = [state]
 
     # remaining rows
-    for step in tqdm.trange(1, height):
-        # apply rules
-        state = jnp.pad(
+    def step(prev_state, _input):
+        next_state = jnp.pad(
             rule_table[
-                state[0:-2],
-                state[1:-1],
-                state[2:],
+                prev_state[0:-2],
+                prev_state[1:-1],
+                prev_state[2:],
             ],
             1,
             mode='wrap',
         )
-        history.append(state)
+        return next_state, next_state
+
+    final_state, all_next_states = jax.lax.scan(
+        step,
+        init_state,
+        jnp.zeros(height-1),
+    )
+
+    history = jnp.concatenate(
+        [
+            init_state.reshape(1, -1),
+            all_next_states,
+        ],
+        axis=0,
+    )
 
     # return a view of the array without the width padding
-    history = jnp.stack(history)
     return history[:, 1:-1]
 
 
