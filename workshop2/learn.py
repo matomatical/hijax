@@ -31,12 +31,14 @@ def main(
     w_star = init_params(key_init_teacher)
 
     print(vis(student=w, teacher=w_star, overwrite=False))
+    print("loss:")
         
     # train
     for t in tqdm.trange(num_steps):
         key, key_data = jax.random.split(key)
         x = jax.random.normal(key_data)
 
+        l = loss(w, w_star, x)
         g = jax.grad(loss)(w, w_star, x)
         w = (
             w[0] - learning_rate * g[0],
@@ -45,6 +47,12 @@ def main(
     
         figs = vis(student=w, teacher=w_star, x=x)
         tqdm.tqdm.write(figs)
+        tqdm.tqdm.write(
+            f"x: {x:+.3f} | loss: {l:.3f} | "
+            +f"a: {w[0]:+.3f} | b: {w[1]:+.3f} | "
+            +f"a*: {w_star[0]:+.3f} | b*: {w_star[1]:+.3f}"
+        )
+        time.sleep(0.02)
 
 
 def loss(w, w_true, x):
@@ -91,7 +99,7 @@ def vis(x=None, overwrite=True, **models):
     
     # render to string
     figure_str = str(fig.show(legend=True))
-    reset = f"\x1b[{len(figure_str.splitlines())}A" if overwrite else ""
+    reset = f"\x1b[{len(figure_str.splitlines())+1}A" if overwrite else ""
     return reset + figure_str
 
 
