@@ -132,7 +132,7 @@ your environment:
 
     * Some tools for launching, visualising, and monitoring experiments:
       ```
-      pip install tyro pillow tqdm
+      pip install tyro pillow plotille tqdm
       ```
       
     * Some deep learning libraries that work on top of JAX:
