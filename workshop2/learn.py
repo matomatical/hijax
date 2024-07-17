@@ -1,12 +1,19 @@
 """
 Teacher-student perceptron learning, vanilla JAX.
+
+Notes:
+
+* did anyone try the challenge from last week?
+* new dependency `pip install plotille` for easy-ish plotting
+* workshop 2 demo: stochastic gradient descent
+* challenge 2: multi-layer perceptron!
 """
 
 import time
 
-import tyro
 import plotille
 import tqdm
+import tyro
 
 import jax
 import jax.numpy as jnp
@@ -23,7 +30,7 @@ def main(
 ):
     key = jax.random.key(seed)
 
-    # initialise
+    # initialise networks
     key, key_init_student = jax.random.split(key)
     w = init_params(key_init_student)
     
@@ -32,7 +39,7 @@ def main(
 
     print(vis(student=w, teacher=w_star, overwrite=False))
     print("loss:")
-        
+    
     # train
     for t in tqdm.trange(num_steps):
         key, key_data = jax.random.split(key)
