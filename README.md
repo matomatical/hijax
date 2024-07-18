@@ -6,6 +6,26 @@ deep learning researchers.
 See the [course website](https://far.in.net/hijax) for details or to express
 interest.
 
+<table>
+<tbody>
+  <tr>
+    <td><img src="demos/workshop1.png" alt="workshop 1 visualisation"></td>
+    <td><img src="demos/workshop2.gif" alt="workshop 2 visualisation"></td>
+    <td><!--workshop 3--></td>
+  </tr>
+  <tr>
+    <td><!--workshop 4--></td>
+    <td><!--workshop 5--></td>
+    <td><!--workshop 6--></td>
+  </tr>
+  <tr>
+    <td><!--workshop 7--></td>
+    <td><!--workshop 8--></td>
+    <td><!--workshop 9--></td>
+  </tr>
+</tbody>
+</table>
+
 Contents of this repository
 ---------------------------
 
@@ -132,7 +152,7 @@ your environment:
 
     * Some tools for launching, visualising, and monitoring experiments:
       ```
-      pip install tyro pillow tqdm
+      pip install tyro pillow plotille tqdm
       ```
       
     * Some deep learning libraries that work on top of JAX:
@@ -158,6 +178,8 @@ The following public repositories showcase the work of course participants.
   https://github.com/matomatical/hijax
 * Rohan Hitchcock's fork: 
   https://github.com/rohan-hitchcock/hijax
+* Rumi Salazar's fork:
+  https://github.com/rumi-salazar/hijax
 
 Participants are encouraged to create a pull request from their fork to this
 repository appending a link to their fork to the above list.
