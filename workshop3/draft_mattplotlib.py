@@ -11,18 +11,23 @@ import einops
 
 
 class plot:
+    """
+    Base class representing a 2d character array as a list of lines.
+    Provides methods for converting to a string, along with operations
+    for horizontal (&) and vertical (^) stacking.
+    """
     def __init__(self, height: int, width: int, lines: list[str]):
         self.height = height
         self.width = width
         self.lines = lines
 
-    def __str__(self):
+    def __str__(self: plot) -> str:
         return "\n".join(self.lines)
 
-    def __and__(self, other):
+    def __and__(self: plot, other: plot) -> plot:
         return hstack(self, other)
 
-    def __xor__(self, other):
+    def __xor__(self: plot, other: plot) -> plot:
         return vstack(self, other)
 
 
@@ -35,6 +40,8 @@ class image(plot):
     Render a small image using a grid of unicode half-characters with
     different foreground and background colours to represent pairs of
     pixels.
+
+    TODO: document input and colormap formats.
     """
     def __init__(self, im, colormap=None):
         # preprocessing: all inputs become float[h, w, rgb] with even h, w
@@ -78,6 +85,82 @@ class image(plot):
         return f"image(height={self.height}, width={self.width})"
 
 
+class scatter(plot):
+    """
+    Render a scatterplot using a grid of braille unicode characters.
+    """
+    def __init__(
+        self,
+        data: np.ndarray, # float[n, 2]
+        height: int = 10,
+        width: int = 30,
+        yrange: tuple[float, float] | None = None,
+        xrange: tuple[float, float] | None = None,
+        color: np.ndarray | None = None,            # float[3] (rgb 0 to 1)
+        check_bounds: bool = False,
+    ):
+        # todo: check shape
+        data = np.asarray(data)
+        color = np.asarray(color)
+        
+        # determine data bounds
+        xmin, ymin = data.min(axis=0)
+        xmax, ymax = data.max(axis=0)
+        if xrange is None:
+            xrange = (xmin, xmax)
+        else:
+            xmin, xmax = xrange
+        if yrange is None:
+            yrange = (ymin, ymax)
+        else:
+            ymin, ymax = yrange
+        # optional check
+        if check_bounds:
+            out_x = xmin < xrange[0] or xmax > xrange[1]
+            out_y = ymin < yrange[0] or ymax > yrange[1]
+            if out_x or out_y:
+                raise ValueError("Scatter points out of range")
+        
+        # quantise 2d float coordinates to data grid
+        dots, *_bins = np.histogram2d(
+            x=data[:,0],
+            y=data[:,1],
+            bins=(2*width, 4*height),
+            range=(xrange, yrange),
+        )
+        dots = dots.T     # we want y first
+        dots = dots[::-1] # correct y for top-down drawing
+        
+        # render data grid as a grid of braille characters
+        grid = [[" " for _ in range(width)] for _ in range(height)]
+        bgrid = braille_encode(dots > 0)
+        for i in range(height):
+            for j in range(width):
+                if bgrid[i, j]:
+                    braille_char = chr(0x2800+bgrid[i, j])
+                    grid[i][j] = switch_color(fg=color) + braille_char
+
+        # render braille grid as lines
+        lines = ["".join(row)+reset_color() for row in grid]
+
+        super().__init__(
+            height=height,
+            width=width,
+            lines=lines,
+        )
+        self.xrange = xrange
+        self.yrange = yrange
+        self.num_points = len(data)
+
+    def __repr__(self):
+        return (
+            f"scatter(height={self.height}, width={self.width}, "
+            f"data=<{self.num_points} points on "
+            f"[{self.xrange[0]},{self.xrange[1]}]x"
+            f"[{self.yrange[0]},{self.yrange[1]}]>)"
+        )
+
+
 class text(plot):
     """
     One or more lines of ASCII text.
@@ -104,89 +187,6 @@ class text(plot):
             f"text(height={self.height}, width={self.width}, "
             f"text={preview!r})"
         )
-
-
-class scatter(plot):
-    """
-    Render a scatterplot using a grid of braille unicode characters.
-    """
-    def __init__(
-        self,
-        data: np.ndarray, # float[n, 2]
-        height: int = 10,
-        width: int = 30,
-        yrange: tuple[float, float] | None = None,
-        xrange: tuple[float, float] | None = None,
-        color: np.ndarray | None = None,            # float[3] (rgb 0 to 1)
-    ):
-        # todo: check shape
-        data = np.asarray(data)
-        color = np.asarray(color)
-        
-        # determine data bounds
-        xmin, ymin = data.min(axis=0)
-        xmax, ymax = data.max(axis=0)
-        if xrange is None:
-            xrange = (xmin, xmax)
-        else:
-            if xmin < xrange[0] or xmax > xrange[1]:
-                print("[mattplotlib] warning: clipping points out of x range")
-            xmin, xmax = xrange
-        if yrange is None:
-            yrange = (ymin, ymax)
-        else:
-            if ymin < yrange[0] or ymax > yrange[1]:
-                print("[mattplotlib] warning: clipping points out of y range")
-            ymin, ymax = yrange
-        
-        # convert float coordinates into quantised grid and character matrices
-        
-        # form the data grid
-        dots, *_bins = np.histogram2d(
-            x=data[:,0],
-            y=data[:,1],
-            bins=(2*width, 4*height),
-            range=(xrange, yrange),
-        )
-        dots = dots.T     # we want y first
-        dots = dots[::-1] # correct y for top-down drawing
-        
-        # draw onto a grid of braille dots
-        grid = [[" " for _ in range(width)] for _ in range(height)]
-        bgrid = braille_encode(dots > 0)
-        for i in range(height):
-            for j in range(width):
-                if bgrid[i, j]:
-                    grid[i][j] = (
-                        switch_color(fg=color)
-                        + chr(0x2800+bgrid[i, j])
-                        + reset_color()
-                    )
-
-        # render as lines
-        super().__init__(
-            height=height,
-            width=width,
-            lines=["".join(row) for row in grid],
-        )
-        
-        # # are axes present?
-        # if xmin <= 0 <= xmax:
-        #     x0 = _discretize((0-xmin)/(xmax-xmin), n=width)
-        # else:
-        #     x0 = None
-        # if ymin <= 0 <= ymax:
-        #     y0 = _discretize((ymax-0)/(ymax-ymin), n=height) # sign-corrected
-        # else:
-        #     y0 = None
-
-        # # draw axes onto grid (if applicable)
-        # if x0 is not None:
-        #     for i in range(height): grid[i][x0] = '│'
-        # if y0 is not None:
-        #     grid[y0] = ['─' for _ in range(width)]
-        # if x0 is not None and y0 is not None:
-        #     grid[y0][x0] = '┼'
 
 
 # # # 
@@ -371,6 +371,69 @@ class center(plot):
 # COLORMAPS
 
 
+def reds(x):
+    """
+    Red colormap. Simply embeds greyscale value into red channel.
+    """
+    h, w = x.shape
+    rgb = np.zeros((h, w, 3))
+    rgb[:, :, 0] = x
+    return rgb
+
+
+def greens(x):
+    """
+    Green colormap. Simply embeds greyscale value into green channel.
+    """
+    h, w = x.shape
+    rgb = np.zeros((h, w, 3))
+    rgb[:, :, 1] = x
+    return rgb
+
+
+def blues(x):
+    """
+    Blue colormap. Simply embeds greyscale value into blue channel.
+    """
+    h, w = x.shape
+    rgb = np.zeros((h, w, 3))
+    rgb[:, :, 2] = x
+    return rgb
+
+
+def yellows(x):
+    """
+    Red colormap. Simply embeds greyscale value into red channel.
+    """
+    h, w = x.shape
+    rgb = np.zeros((h, w, 3))
+    rgb[:, :, 0] = x
+    rgb[:, :, 1] = x
+    return rgb
+
+
+def magentas(x):
+    """
+    Red colormap. Simply embeds greyscale value into red channel.
+    """
+    h, w = x.shape
+    rgb = np.zeros((h, w, 3))
+    rgb[:, :, 0] = x
+    rgb[:, :, 2] = x
+    return rgb
+
+
+def cyans(x):
+    """
+    Red colormap. Simply embeds greyscale value into red channel.
+    """
+    h, w = x.shape
+    rgb = np.zeros((h, w, 3))
+    rgb[:, :, 1] = x
+    rgb[:, :, 2] = x
+    return rgb
+
+
 def viridis(x):
     """
     Viridis colormap.
@@ -443,69 +506,6 @@ def viridis(x):
         [.926,.897,.104],[.935,.898,.108],[.945,.899,.112],[.955,.901,.118],
         [.964,.902,.123],[.974,.903,.130],[.983,.904,.136],[.993,.906,.143],
     ])[(np.clip(x, 0., 1.) * (255)).astype(int)]
-
-
-def reds(x):
-    """
-    Red colormap. Simply embeds greyscale value into red channel.
-    """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 0] = x
-    return rgb
-
-
-def greens(x):
-    """
-    Green colormap. Simply embeds greyscale value into green channel.
-    """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 1] = x
-    return rgb
-
-
-def blues(x):
-    """
-    Blue colormap. Simply embeds greyscale value into blue channel.
-    """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 2] = x
-    return rgb
-
-
-def yellows(x):
-    """
-    Red colormap. Simply embeds greyscale value into red channel.
-    """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 0] = x
-    rgb[:, :, 1] = x
-    return rgb
-
-
-def magentas(x):
-    """
-    Red colormap. Simply embeds greyscale value into red channel.
-    """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 0] = x
-    rgb[:, :, 2] = x
-    return rgb
-
-
-def cyans(x):
-    """
-    Red colormap. Simply embeds greyscale value into red channel.
-    """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 1] = x
-    rgb[:, :, 2] = x
-    return rgb
 
 
 def sweetie16(x):
@@ -591,7 +591,7 @@ def reset_color() -> str:
 
 
 # # # 
-# DEMO
+# DEMO / TEST
 
 if __name__ == "__main__":
     size = 14

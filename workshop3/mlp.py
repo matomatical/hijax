@@ -194,7 +194,7 @@ def vis_metrics(
             yrange=(0, max(l for s, l in losses)),
             color=(1,0,1),
             width=38,
-            height=14,
+            height=11,
         ))
         ^ mp.text(f"loss: {losses[-1][1]:.3f}")
     )
@@ -206,7 +206,7 @@ def vis_metrics(
             yrange=(0, 1),
             color=(0,1,0),
             width=38,
-            height=14,
+            height=11,
         ))
         ^ mp.text(f"acc: {accuracies[-1][1]:.2%}")
     )
