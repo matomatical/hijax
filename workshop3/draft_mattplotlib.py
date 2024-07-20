@@ -310,7 +310,7 @@ class border(plot):
         ROUND  = "─│╭╮╰╯"
         BUMPER = "─│▛▜▙▟"
 
-    def __init__(self, plot: plot, style: Style = Style.LIGHT):
+    def __init__(self, plot: plot, style: Style = Style.ROUND):
         bordered_lines = [
             style[2] + style[0] * plot.width + style[3],
             *[style[1] + line + style[1] for line in plot.lines],
@@ -333,9 +333,14 @@ class center(plot):
     Put blank space around a plot.
     """
 
-    def __init__(self, plot: plot, height: int, width: int):
-        height = max(height, plot.height)
-        width = max(width, plot.width)
+    def __init__(
+        self,
+        plot: plot,
+        height: int | None = None,
+        width: int | None = None,
+    ):
+        height = plot.height if height is None else max(height, plot.height)
+        width = plot.width if width is None else max(width, plot.width)
         def _center(inner_size, outer_size):
             diff = outer_size - inner_size
             left = diff // 2

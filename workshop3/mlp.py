@@ -14,20 +14,20 @@ Workshop plan:
 * workshop 3 demo:
   * implement MLP with equinox
   * load MNIST https://yann.lecun.com/exdb/mnist/
-  * train MLP on MNIST with optax
+  * train MLP on MNIST with optax (sgd, adam, lr schedule, adamw)
 * challenges:
   * implement a stateful optimiser object from scratch
   * replicate some architectures and performance numbers from lecun's table
 """
 
+from jaxtyping import Array, Float, Int, PRNGKeyArray as Key
+from typing import Literal
+
 import jax
 import jax.numpy as jnp
-
+import einops
 import optax
 import equinox
-
-import einops
-from jaxtyping import Array, Float, Int, PRNGKeyArray as Key
 
 import tqdm
 import draft_mattplotlib as mp
@@ -104,10 +104,12 @@ class MLPImageClassifier(equinox.Module):
 def main(
     num_hidden: int = 300,
     learning_rate: float = 0.05,
-    batch_size: int = 64,
-    num_steps: int = 500,
-    steps_per_visualisation: int = 8,
-    num_digits_per_visualisation: int = 30,
+    lr_schedule: bool = False,
+    opt: Literal["sgd", "adam", "adamw"] = "sgd",
+    batch_size: int = 512,
+    num_steps: int = 256,
+    steps_per_visualisation: int = 4,
+    num_digits_per_visualisation: int = 15,
     seed: int = 42,
 ):
     key = jax.random.key(seed)
@@ -141,22 +143,41 @@ def main(
     )
 
     # print(vis_digits(
-    #     digits=x_train[:num_digits_per_visualisation],
-    #     true_labels=y_train[:num_digits_per_visualisation],
-    #     # pred_labels=model(x_train[:15]).argmax(axis=-1),
+    #     digits=x_test[:num_digits_per_visualisation],
+    #     true_labels=y_test[:num_digits_per_visualisation],
+    #     # pred_labels=model(
+    #     #     x_test[:num_digits_per_visualisation]
+    #     # ).argmax(axis=-1),
     # ))
 
     print("initialising optimiser...")
-    optimiser = optax.sgd(learning_rate) # TODO: try adam, lr_decay
-    optimiser_state = optimiser.init(model)
+    # configure the optimiser
+    if lr_schedule:
+        learning_rate = optax.linear_schedule(
+            init_value=learning_rate,
+            end_value=learning_rate/10,
+            transition_steps=num_steps,
+        )
+    if opt == 'sgd':
+        optimiser = optax.sgd(learning_rate)
+    elif opt == 'adam':
+        optimiser = optax.adam(learning_rate)
+    elif opt == 'adamw':
+        optimiser = optax.adamw(learning_rate)
+    # initialise the optimiser state
+    opt_state = optimiser.init(model)
+    
+    # print(opt_state)
 
     print("begin training...")
+    losses = []
+    accuracies = []
     for step in tqdm.trange(num_steps, dynamic_ncols=True):
         # sample a batch
         key_batch, key = jax.random.split(key)
         batch = jax.random.choice(
             key=key_batch,
-            a=60000,
+            a=y_train.size,
             shape=(batch_size,),
             replace=False,
         )
@@ -171,22 +192,40 @@ def main(
         )
 
         # compute update, update optimiser and model
-        updates, optimiser_state = optimiser.update(grads, optimiser_state)
+        updates, opt_state = optimiser.update(grads, opt_state, model)
         model = optax.apply_updates(model, updates)
 
-        # visualisation! number grid, TODO: loss/acc curves!
-        if step % steps_per_visualisation == 0:
-            acc = accuracy(model, x_test[:1000], y_test[:1000])
-            plot = vis_digits(
-                digits=x_train[:num_digits_per_visualisation],
-                true_labels=y_train[:num_digits_per_visualisation],
+        # track metrics
+        losses.append((step, loss))
+        test_acc = accuracy(model, x_test[:1000], y_test[:1000])
+        accuracies.append((step, test_acc))
+
+        # visualisation!
+        if step % steps_per_visualisation == 0 or step == num_steps - 1:
+            digit_plot = vis_digits(
+                digits=x_test[:num_digits_per_visualisation],
+                true_labels=y_test[:num_digits_per_visualisation],
                 pred_labels=model(
-                    x_train[:num_digits_per_visualisation]
+                    x_test[:num_digits_per_visualisation]
                 ).argmax(axis=-1),
             )
+            metrics_plot = vis_metrics(
+                losses=losses,
+                accuracies=accuracies,
+                total_num_steps=num_steps,
+            )
+            opt_state_str = str(opt_state)
+            output_height = (
+                digit_plot.height
+                + metrics_plot.height
+                + 1+len(opt_state_str.splitlines())
+            )
+
             tqdm.tqdm.write(
-                (f"\x1b[{plot.height+1}A" if step > 0 else "")
-                + f"{plot}\ntrain loss: {loss:.3f} | test acc: {acc:.2%}"
+                (f"\x1b[{output_height}A" if step > 0 else "")
+                + f"{digit_plot}\n"
+                + f"{metrics_plot}\n"
+                + f"optimiser state:\n{opt_state_str}"
             )
 
 
@@ -219,7 +258,6 @@ def accuracy(
     return jnp.mean(y_batch == highest_prob_class)
 
 
-
 # # # 
 # Visualisation
 
@@ -243,12 +281,45 @@ def vis_digits(
         cmaps = [None] * len(true_labels)
         labels = [str(t) for t in true_labels]
     array = mp.wrap(*[
-        mp.image(ddigit, colormap=cmap)
-        ^
-        mp.center(mp.text(label), height=2, width=dwidth)
+        mp.border(
+            mp.image(ddigit, colormap=cmap)
+            ^ mp.center(mp.text(label), width=dwidth)
+        )
         for ddigit, label, cmap in zip(ddigits, labels, cmaps)
-    ], cols=6)
+    ], cols=5)
     return array
+
+
+def vis_metrics(
+    losses: list[tuple[int, float]],
+    accuracies: list[tuple[int, float]],
+    total_num_steps: int,
+) -> mp.plot:
+    loss_plot = (
+        mp.center(mp.text("train loss (cross entropy)"), width=40)
+        ^ mp.border(mp.scatter(
+            data=losses,
+            xrange=(0, total_num_steps-1),
+            yrange=(0, max(l for s, l in losses)),
+            color=(1,0,1),
+            width=38,
+            height=14,
+        ))
+        ^ mp.text(f"loss: {losses[-1][1]:.3f}")
+    )
+    acc_plot = (
+        mp.center(mp.text("test accuracy"), width=40)
+        ^ mp.border(mp.scatter(
+            data=accuracies,
+            xrange=(0, total_num_steps-1),
+            yrange=(0, 1),
+            color=(0,1,0),
+            width=38,
+            height=14,
+        ))
+        ^ mp.text(f"acc: {accuracies[-1][1]:.2%}")
+    )
+    return loss_plot & acc_plot
 
 
 # # # 
