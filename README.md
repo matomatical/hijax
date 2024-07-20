@@ -40,11 +40,12 @@ numbered 1 through 9:
 
 * `workshop2`: Classic perceptron using `jax.grad`.
 
-* `workshop3`: Multi-layer perceptron using `equinox` and `optax`.
+* `workshop3`: Multi-layer perceptron with minibatch SGD using `equinox`.
 
-* `workshop4`: CNN with minibatch SGD using `jax.vmap`.
+* `workshop4`: Convolutional neural network using `equinox.nn`, `jax.vmap`
+  and `optax`.
 
-* `workshop5`: Bigger CNN using `jax.jit`.
+* `workshop5`: Bigger convolutional neural network using `jax.jit`.
 
 * `workshop6`: Byte transformer using `jax.jit`.
 
