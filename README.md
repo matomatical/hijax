@@ -40,7 +40,7 @@ numbered 1 through 9:
 
 * `workshop2`: Classic perceptron using `jax.grad`.
 
-* `workshop3`: Multi-layer perceptron using `flax.linen` and `optax`.
+* `workshop3`: Multi-layer perceptron using `equinox` and `optax`.
 
 * `workshop4`: CNN with minibatch SGD using `jax.vmap`.
 
@@ -154,19 +154,22 @@ your environment:
       ```
       pip install tyro pillow plotille tqdm
       ```
-      
-    * Some deep learning libraries that work on top of JAX:
-      ```
-      pip install flax optax
-      ```
 
 4.  The command for installing JAX itself depends on whether you want to
     compile to CPU, GPU or TPU. Follow the instructions on the jax website:
     https://jax.readthedocs.io/en/latest/installation.html
+     
+
+5.  After installing jax we can install some libraries that work on top of
+    it:
+
+    ```
+    pip install equinox optax jaxtyping
+    ```
 
 Whenever you are done with your virtual environment, you can leave it using
 the command `deactivate`. You'll then have to repeat step (2) again next
-time. You won't have to repeat steps (1), (3) or (4).
+time. You won't have to repeat steps (1), (3), (4), or (5).
 
 
 Course participants
@@ -180,6 +183,8 @@ The following public repositories showcase the work of course participants.
   https://github.com/rohan-hitchcock/hijax
 * Rumi Salazar's fork:
   https://github.com/rumi-salazar/hijax
+* Billy Snikkers' fork:
+  https://github.com/blinkybool/hijax
 
 Participants are encouraged to create a pull request from their fork to this
 repository appending a link to their fork to the above list.
