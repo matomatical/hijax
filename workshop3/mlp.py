@@ -1,14 +1,15 @@
 """
-MLP for handwritten digit classification, implemented with flax and optax.
+MLP for handwritten digit classification, implemented with equinox and optax.
 
-Plan:
+Workshop plan:
 
 * any questions from homework?
 * installations:
-  * `pip install equinox`
+  * new library! `pip install equinox`
+  * today we'll also embrace `jaxtyping`, `einops`, and `mattplotlib`
 * deep learning in jax:
   * dm-haiku, flax.linen, equinox, flax.nnx, try not to rant too much
-  * optax and the jax 'ecosystem'
+  * optax and the 'dm jax ecosystem'
 * new jax concept: pytrees (we saw these last time)
 * workshop 3 demo:
   * implement MLP with equinox
@@ -27,7 +28,9 @@ import equinox
 
 import einops
 from jaxtyping import Array, Float, Int, PRNGKeyArray as Key
+
 import tqdm
+import draft_mattplotlib as mp
 
 
 # # # 
@@ -83,10 +86,13 @@ class MLPImageClassifier(equinox.Module):
         self,
         x: Float[Array, '... image_height image_width'],
     ) -> Float[Array, '... num_outputs']:
+        # flatten image
         x = einops.rearrange(x, '... h w -> ... (h w)')
+        # apply mlp
         x = self.layer1(x)
         x = jnp.tanh(x)
         x = self.layer2(x)
+        # logits -> probability distribution
         x = jax.nn.softmax(x, axis=-1)
         return x
 
@@ -97,15 +103,17 @@ class MLPImageClassifier(equinox.Module):
 
 def main(
     num_hidden: int = 300,
-    learning_rate: float = 0.1,
+    learning_rate: float = 0.05,
     batch_size: int = 64,
     num_steps: int = 500,
-    steps_per_visualisation: int = 16,
+    steps_per_visualisation: int = 8,
+    num_digits_per_visualisation: int = 30,
     seed: int = 42,
 ):
     key = jax.random.key(seed)
 
     # initialise model
+    print("initialising model...")
     key_model, key = jax.random.split(key)
     model = MLPImageClassifier(
         key=key_model,
@@ -113,24 +121,37 @@ def main(
         num_hidden=num_hidden,
         num_classes=10,
     )
-    print(model)
-    print(model(jnp.zeros((2,28,28))))
 
-    # load and preprocess data
+    # print(model)
+    # print(model(jnp.zeros((2,28,28))))
+
+    print("loading and preprocessing data...")
     with jnp.load('mnist.npz') as datafile:
-        x_train = jnp.array(datafile['x_train'])
-        x_test = jnp.array(datafile['x_test'])
-        y_train = jnp.array(datafile['y_train'])
-        y_test = jnp.array(datafile['y_test'])
-    x_train, x_test = jax.tree.map(lambda x: x/255, (x_train, x_test))
-    # TODO: visualise some data!
+        x_train = datafile['x_train']
+        x_test = datafile['x_test']
+        y_train = datafile['y_train']
+        y_test = datafile['y_test']
+    x_train, x_test, y_train, y_test = jax.tree.map(
+        jnp.array,
+        (x_train, x_test, y_train, y_test),
+    )
+    x_train, x_test = jax.tree.map(
+        lambda x: x/255,
+        (x_train, x_test),
+    )
 
-    # initialise optimiser
-    optimiser = optax.sgd(learning_rate)
+    # print(vis_digits(
+    #     digits=x_train[:num_digits_per_visualisation],
+    #     true_labels=y_train[:num_digits_per_visualisation],
+    #     # pred_labels=model(x_train[:15]).argmax(axis=-1),
+    # ))
+
+    print("initialising optimiser...")
+    optimiser = optax.sgd(learning_rate) # TODO: try adam, lr_decay
     optimiser_state = optimiser.init(model)
-    # TODO: Try adam, try learning rate decay!
 
-    for step in tqdm.trange(num_steps):
+    print("begin training...")
+    for step in tqdm.trange(num_steps, dynamic_ncols=True):
         # sample a batch
         key_batch, key = jax.random.split(key)
         batch = jax.random.choice(
@@ -153,10 +174,20 @@ def main(
         updates, optimiser_state = optimiser.update(grads, optimiser_state)
         model = optax.apply_updates(model, updates)
 
-        # TODO: visualisation! number grid and loss/acc curves!
+        # visualisation! number grid, TODO: loss/acc curves!
         if step % steps_per_visualisation == 0:
             acc = accuracy(model, x_test[:1000], y_test[:1000])
-            tqdm.tqdm.write(f'train loss: {loss:.3f} | test acc: {acc:.2%}')
+            plot = vis_digits(
+                digits=x_train[:num_digits_per_visualisation],
+                true_labels=y_train[:num_digits_per_visualisation],
+                pred_labels=model(
+                    x_train[:num_digits_per_visualisation]
+                ).argmax(axis=-1),
+            )
+            tqdm.tqdm.write(
+                (f"\x1b[{plot.height+1}A" if step > 0 else "")
+                + f"{plot}\ntrain loss: {loss:.3f} | test acc: {acc:.2%}"
+            )
 
 
 def cross_entropy(
@@ -168,12 +199,14 @@ def cross_entropy(
     Hx(q, p) = - Sum_i p(i) log q(i)
     """
     batch_size, = y_batch.shape
-    pred_prob_all_classes = model(x_batch)  # -> batch_size 10
-    pred_prob_true_class = pred_prob_all_classes[
-        jnp.arange(batch_size),             # for each example
-        y_batch,                            # select the prob of the true class
-    ]                                       # -> batch_size
-    return -jnp.mean(jnp.log(pred_prob_true_class))
+    pred_prob_all_classes = model(x_batch)          # -> batch_size 10
+    pred_prob_true_class = pred_prob_all_classes[   # advanced indexing
+        jnp.arange(batch_size),                     # for each example
+        y_batch,                                    # select prob of true class
+    ]                                               # -> batch_size
+    log_prob_true_class = jnp.log(pred_prob_true_class)
+    avg_cross_entropy = -jnp.mean(log_prob_true_class)
+    return avg_cross_entropy
 
 
 def accuracy(
@@ -191,8 +224,31 @@ def accuracy(
 # Visualisation
 
 
-# TODO: image plotting, my style
-# TODO: also a loss plot?
+def vis_digits(
+    digits: Float[Array, "n h w"],
+    true_labels: Int[Array, "n"],
+    pred_labels: Int[Array, "n"] | None = None,
+    downsample: int = 2
+) -> mp.plot:
+    # downsample images
+    ddigits = digits[:,::downsample,::downsample]
+    dwidth = digits.shape[2] // downsample
+
+    # if predictions provided, classify as true or false
+    if pred_labels is not None:
+        corrects = (true_labels == pred_labels)
+        cmaps = [None if correct else mp.reds for correct in corrects]
+        labels = [f"{t} ({p})" for t, p in zip(true_labels, pred_labels)]
+    else:
+        cmaps = [None] * len(true_labels)
+        labels = [str(t) for t in true_labels]
+    array = mp.wrap(*[
+        mp.image(ddigit, colormap=cmap)
+        ^
+        mp.center(mp.text(label), height=2, width=dwidth)
+        for ddigit, label, cmap in zip(ddigits, labels, cmaps)
+    ], cols=6)
+    return array
 
 
 # # # 
