@@ -21,13 +21,13 @@ class plot:
         self.width = width
         self.lines = lines
 
-    def __str__(self: plot) -> str:
+    def __str__(self) -> str:
         return "\n".join(self.lines)
 
-    def __and__(self: plot, other: plot) -> plot:
+    def __and__(self, other):
         return hstack(self, other)
 
-    def __xor__(self: plot, other: plot) -> plot:
+    def __xor__(self, other):
         return vstack(self, other)
 
 
