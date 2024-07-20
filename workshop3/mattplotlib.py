@@ -375,9 +375,8 @@ def reds(x):
     """
     Red colormap. Simply embeds greyscale value into red channel.
     """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 0] = x
+    rgb = np.zeros((*x.shape, 3))
+    rgb[..., 0] = x
     return rgb
 
 
@@ -385,9 +384,8 @@ def greens(x):
     """
     Green colormap. Simply embeds greyscale value into green channel.
     """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 1] = x
+    rgb = np.zeros((*x.shape, 3))
+    rgb[..., 1] = x
     return rgb
 
 
@@ -395,42 +393,41 @@ def blues(x):
     """
     Blue colormap. Simply embeds greyscale value into blue channel.
     """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 2] = x
+    rgb = np.zeros((*x.shape, 3))
+    rgb[..., 2] = x
     return rgb
 
 
 def yellows(x):
     """
-    Red colormap. Simply embeds greyscale value into red channel.
+    Yellow colormap. Simply embeds greyscale value into red and green
+    channels.
     """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 0] = x
-    rgb[:, :, 1] = x
+    rgb = np.zeros((*x.shape, 3))
+    rgb[..., 0] = x
+    rgb[..., 1] = x
     return rgb
 
 
 def magentas(x):
     """
-    Red colormap. Simply embeds greyscale value into red channel.
+    Magenta colormap. Simply embeds greyscale value into red and blue
+    channels.
     """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 0] = x
-    rgb[:, :, 2] = x
+    rgb = np.zeros((*x.shape, 3))
+    rgb[..., 0] = x
+    rgb[..., 2] = x
     return rgb
 
 
 def cyans(x):
     """
-    Red colormap. Simply embeds greyscale value into red channel.
+    Cyan colormap. Simply embeds greyscale value into green and blue
+    channels.
     """
-    h, w = x.shape
-    rgb = np.zeros((h, w, 3))
-    rgb[:, :, 1] = x
-    rgb[:, :, 2] = x
+    rgb = np.zeros((*x.shape, 3))
+    rgb[..., 1] = x
+    rgb[..., 2] = x
     return rgb
 
 
