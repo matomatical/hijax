@@ -266,11 +266,10 @@ def vis_digits(
     digits: Float[Array, "n h w"],
     true_labels: Int[Array, "n"],
     pred_labels: Int[Array, "n"] | None = None,
-    downsample: int = 2
 ) -> mp.plot:
     # downsample images
-    ddigits = digits[:,::downsample,::downsample]
-    dwidth = digits.shape[2] // downsample
+    ddigits = digits[:,::2,::2]
+    dwidth = digits.shape[2] // 2
 
     # if predictions provided, classify as true or false
     if pred_labels is not None:
