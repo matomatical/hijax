@@ -84,7 +84,6 @@ class LinearLayer(equinox.Module):
 class MLPImageClassifier(equinox.Module):
     layer1: LinearLayer
     layer2: LinearLayer
-    activation: None
 
 
     def __init__(
@@ -93,13 +92,11 @@ class MLPImageClassifier(equinox.Module):
         image_shape: tuple[int, int],
         num_hidden: int,
         num_classes: int,
-        activation = jnp.tanh,
     ):
         key_layer1, key_layer2 = jax.random.split(key)
         num_inputs = image_shape[0] * image_shape[1]
         self.layer1 = LinearLayer(key_layer1, num_inputs, num_hidden)
         self.layer2 = LinearLayer(key_layer2, num_hidden, num_classes)
-        self.activation = activation
 
 
     def __call__(
@@ -110,7 +107,7 @@ class MLPImageClassifier(equinox.Module):
         x = einops.rearrange(x, '... h w -> ... (h w)')
         # apply mlp layers
         x = self.layer1(x)
-        x = self.activation(x) # jax.nn.relu
+        x = jnp.tanh(x) # jax.nn.relu
         x = self.layer2(x)
         # logits -> probability distribution
         x = jax.nn.softmax(x, axis=-1)
@@ -164,7 +161,9 @@ def main(
     print(vis_digits(
         digits=x_test[:num_digits_per_visualisation],
         true_labels=y_test[:num_digits_per_visualisation],
-        pred_labels=model(x_test[:num_digits_per_visualisation]).argmax(axis=-1),
+        pred_labels=model(
+            x_test[:num_digits_per_visualisation]
+        ).argmax(axis=-1),
     ))
 
     
@@ -184,7 +183,7 @@ def main(
         y_batch = y_train[batch]
 
         # compute the batch loss and grad
-        loss, grads = equinox.filter_value_and_grad(cross_entropy)(
+        loss, grads = jax.value_and_grad(cross_entropy)(
             model,
             x_batch,
             y_batch,
