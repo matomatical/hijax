@@ -6,17 +6,18 @@ Preliminaries:
 * any questions from homework?
 * installations:
   * today we'll see `optax` (already installed?)
-* download data! same as last week `cp ../workshop3/mnist.npz .
+* download data!
+  * same as last week `cp ../workshop3/mnist.npz .
 
 Notes:
 
-* 'jax ecosystem'
+* 'jax deep learning ecosystem'
   https://deepmind.google/discover/blog/using-jax-to-accelerate-our-research/
 
 Workshop plan:
 
 * starting from code similar to last time
-* implement CNN with `equinox.nn` modules
+* implement CNN (simplified LeNet) with `equinox.nn` modules
 * configure stateful optimiser with `optax`
 * train the CNN on MNIST
 
@@ -35,7 +36,7 @@ TODO:
 """
 
 from typing import Literal
-from jaxtyping import Array, Float, Int, PRNGKeyArray as Key
+from jaxtyping import Array, Float, Int, PRNGKeyArray
 
 import jax
 import jax.numpy as jnp
@@ -51,33 +52,58 @@ import mattplotlib as mp
 # Architecture
 
 
-class CNN(eqx.Module):
-    conv: eqx.nn.Conv2d
-    max_pool: eqx.nn.MaxPool2d
-    dense1: eqx.nn.Linear
-    dense2: eqx.nn.Linear
-    dense3: eqx.nn.Linear
+def scaled_tanh(x):
+    return 1.7159 * jnp.tanh(0.6667 * x)
 
-    def __init__(self, key):
-        k1, k2, k3, k4 = jax.random.split(key, 4)
-        self.conv = eqx.nn.Conv2d(1, 3, kernel_size=4, key=k1)
-        self.max_pool = eqx.nn.MaxPool2d(kernel_size=2)
-        self.dense1 = eqx.nn.Linear(1728, 512, key=k2)
-        self.dense2 = eqx.nn.Linear(512, 64, key=k3)
-        self.dense3 = eqx.nn.Linear(64, 10, key=k4)
 
-    def __call__(self, x):
-        x = self.conv(x)
-        x = self.max_pool(x)
-        x = jax.nn.relu(x)
-        x = jnp.ravel(x)
-        x = self.dense1(x)
-        x = jax.nn.sigmoid(x)
-        x = self.dense2(x)
-        x = jax.nn.relu(x)
-        x = self.dense3(x)
-        x = jax.nn.softmax(x)
+class SimpLeNet(eqx.Module):
+    layers: tuple
+    # TODO: custom adaptive pooling, separate learnable modules? no filtering!
+    # TODO: or, embrace filtering!
+
+    def __init__(self, key: PRNGKeyArray):
+        k1, k2, k3, k4, k5 = jax.random.split(key, 5)
+        self.layers = (
+            # Input:         1x28x28
+            # C1:       ->   6x28x28
+            eqx.nn.Conv2d(1, 6, kernel_size=5, padding=2, key=k1),
+            scaled_tanh,
+            # S2*:      ->   6x14x14 (note: no learnable scale/shift params)
+            eqx.nn.AvgPool2d(kernel_size=2, stride=2),
+            scaled_tanh,
+            # C3*:      ->  16x10x10 (note: fully connected channels)
+            eqx.nn.Conv2d(6, 16, kernel_size=5, padding=0, key=k2),
+            scaled_tanh,
+            # S4*:      ->  16x5x5   (note: no learnable scale/shift params)
+            eqx.nn.AvgPool2d(kernel_size=2, stride=2),
+            scaled_tanh,
+            # C5:       -> 120x1x1 -> 120
+            eqx.nn.Conv2d(16, 120, kernel_size=5, padding=0, key=k3),
+            jnp.ravel,
+            scaled_tanh,
+            # F6:       -> 84
+            eqx.nn.Linear(120, 84, key=k4),
+            scaled_tanh,
+            # Output*   -> 10     (note: learned map not hand-made RBF code)
+            eqx.nn.Linear(84, 10, key=k5),
+            jax.nn.softmax,
+        )
+
+
+    def forward(
+        self,
+        x: Float[Array, "1 28 28"],
+    ) -> Float[Array, "10"]:
+        for layer in self.layers:
+            x = layer(x)
         return x
+
+
+    def forward_batch(
+        self,
+        x_batch: Float[Array, "b 1 28 28"],
+    ) -> Float[Array, "b 10"]:
+        return jax.vmap(self.forward)(x_batch)
 
 
 # # # 
@@ -85,7 +111,6 @@ class CNN(eqx.Module):
 
 
 def main(
-    num_hidden: int = 300,
     learning_rate: float = 0.05,
     lr_schedule: bool = False,
     opt: Literal["sgd", "adam", "adamw"] = "sgd",
@@ -100,25 +125,25 @@ def main(
 
     print("initialising model...")
     key_model, key = jax.random.split(key)
-    model = CNN(key)
+    model = SimpLeNet(key_model)
+
+    print(model)
 
     
     print("loading and preprocessing data...")
     with jnp.load('mnist.npz') as datafile:
-        x_train = datafile['x_train']
-        x_test = datafile['x_test']
-        y_train = datafile['y_train']
-        y_test = datafile['y_test']
-    x_train, x_test, y_train, y_test = jax.tree.map(
-        jnp.array,
-        (x_train, x_test, y_train, y_test),
-    )
+        x_train = jnp.array(datafile['x_train'])
+        x_test = jnp.array(datafile['x_test'])
+        y_train = jnp.array(datafile['y_train'])
+        y_test = jnp.array(datafile['y_test'])
     x_train, x_test = jax.tree.map(
-        lambda x: einops.rearrange(x/255, 'b h w -> b 1 h w'),
+        lambda x: einops.rearrange(1.275 * x/255 - 0.1, 'b h w -> b 1 h w'),
         (x_train, x_test),
     )
 
+    print(model.forward(x_train[0]))
     
+
     print("initialising optimiser...")
     # configure the optimiser
     if lr_schedule:
@@ -134,7 +159,7 @@ def main(
     elif opt == 'adamw':
         optimiser = optax.adamw(learning_rate)
     # initialise the optimiser state
-    opt_state = optimiser.init(model)
+    opt_state = optimiser.init(eqx.filter(model, eqx.is_array))
     
     # print(opt_state)
 
@@ -154,21 +179,23 @@ def main(
         x_batch = x_train[batch]
         y_batch = y_train[batch]
 
+
         # compute the batch loss and grad
-        batch_model = jax.vmap(model)
-        loss, grads = eqx.filter_value_and_grad(cross_entropy)(
-            batch_model,
+        loss, grads = eqx.filter_value_and_grad(batch_cross_entropy)(
+            model,
             x_batch,
             y_batch,
         )
+
 
         # compute update, update optimiser and model
         updates, opt_state = optimiser.update(grads, opt_state, model)
         model = eqx.apply_updates(model, updates)
 
+
         # track metrics
         losses.append((step, loss))
-        test_acc = accuracy(batch_model, x_test[:1000], y_test[:1000])
+        test_acc = batch_accuracy(model, x_test[:1000], y_test[:1000])
         accuracies.append((step, test_acc))
 
 
@@ -177,59 +204,61 @@ def main(
             digit_plot = vis_digits(
                 digits=x_test[:num_digits_per_visualisation],
                 true_labels=y_test[:num_digits_per_visualisation],
-                pred_labels=batch_model(
-                    x_test[:num_digits_per_visualisation]
-                ).argmax(axis=-1),
+                model=model,
             )
             metrics_plot = vis_metrics(
                 losses=losses,
                 accuracies=accuracies,
                 total_num_steps=num_steps,
             )
-            # TODO: better state visualisation
-            opt_state_str = str(opt_state)
-            output_height = (
-                digit_plot.height
-                + metrics_plot.height
-                + 1+len(opt_state_str.splitlines())
-            )
-            tqdm.tqdm.write(
-                (f"\x1b[{output_height}A" if step > 0 else "")
-                + f"{digit_plot}\n"
-                + f"{metrics_plot}\n"
-                + f"optimiser state:\n{opt_state_str}"
-            )
+            plot = digit_plot ^ metrics_plot
+            if step == 0:
+                tqdm.tqdm.write(str(plot))
+            else:
+                tqdm.tqdm.write(f"\x1b[{plot.height}A{plot}")
 
 
 # # # 
 # Metrics
 
 
-def cross_entropy(
-    model: CNN,
+# NOTE: START FROM LAST WEEK'S VERSIONS
+
+
+def batch_cross_entropy(
+    model: eqx.Module,
     x_batch: Float[Array, "b h w"],
     y_batch: Int[Array, "b"],
+) -> float:
+    """
+    Average cross entropy from across the batch.
+    """
+    vmapped_cross_entropy_fn = jax.vmap(
+        cross_entropy,
+        in_axes=(None,0,0),
+    )
+    all_cross_entropies = vmapped_cross_entropy_fn(model, x_batch, y_batch)
+    avg_cross_entropy = all_cross_entropies.mean()
+    return avg_cross_entropy
+
+
+def cross_entropy(
+    model: eqx.Module,
+    x: Float[Array, "h w"],
+    y: int,
 ) -> float:
     """
     Hx(q, p) = - Sum_i p(i) log q(i)
     """
-    batch_size, = y_batch.shape
-    pred_prob_all_classes = model(x_batch)          # -> batch_size 10
-    pred_prob_true_class = pred_prob_all_classes[   # advanced indexing
-        jnp.arange(batch_size),                     # for each example
-        y_batch,                                    # select prob of true class
-    ]                                               # -> batch_size
-    log_prob_true_class = jnp.log(pred_prob_true_class)
-    avg_cross_entropy = -jnp.mean(log_prob_true_class)
-    return avg_cross_entropy
+    return -jnp.log(model.forward(x)[y])
 
 
-def accuracy(
-    model: CNN,
+def batch_accuracy(
+    model: eqx.Module,
     x_batch: Float[Array, "b h w"],
     y_batch: Int[Array, "b"],
 ) -> float:
-    pred_prob_all_classes = model(x_batch)
+    pred_prob_all_classes = model.forward_batch(x_batch)
     highest_prob_class = pred_prob_all_classes.argmax(axis=-1)
     return jnp.mean(y_batch == highest_prob_class)
 
@@ -241,14 +270,21 @@ def accuracy(
 def vis_digits(
     digits: Float[Array, "n h w"],
     true_labels: Int[Array, "n"],
-    pred_labels: Int[Array, "n"] | None = None,
+    model: eqx.Module | None = None,
 ) -> mp.plot:
-    # downsample images
-    ddigits = digits[:,0,::2,::2]
+    # shrink and normalise images
+    ddigits = einops.reduce(
+        (digits + 0.1) / 1.275,
+        'b 1 (h 2) (w 2) -> b h w',
+        'mean',
+    )
     dwidth = digits.shape[-1] // 2
 
     # if predictions provided, classify as true or false
-    if pred_labels is not None:
+
+    # if model is provided, classify digits and mark correct or incorrect
+    if model is not None:
+        pred_labels = model.forward_batch(digits).argmax(axis=-1)
         corrects = (true_labels == pred_labels)
         cmaps = [None if correct else mp.reds for correct in corrects]
         labels = [f"{t} ({p})" for t, p in zip(true_labels, pred_labels)]
