@@ -24,15 +24,11 @@ Workshop plan:
 Challenge (choose one, both, or your own):
 
 * implement a drop-in replacement for `optax.adam`
-* replicate some architecture, optimiser and error rate from
-  Yann LeCun's table at https://yann.lecun.com/exdb/mnist/
 
 TODO:
 
-* go through equinox CNN tutorial in more detail
-* fight with this and see if I can avoid filtering this time too
+* custom adaptive pooling, separate learnable modules? no filtering!
   (the emphasis should be on optax state management this week!)
-* rewrite this file line by line to make sure it all makes sense
 """
 
 from typing import Literal
@@ -58,8 +54,6 @@ def scaled_tanh(x):
 
 class SimpLeNet(eqx.Module):
     layers: tuple
-    # TODO: custom adaptive pooling, separate learnable modules? no filtering!
-    # TODO: or, embrace filtering!
 
     def __init__(self, key: PRNGKeyArray):
         k1, k2, k3, k4, k5 = jax.random.split(key, 5)
