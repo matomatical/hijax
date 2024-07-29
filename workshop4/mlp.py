@@ -13,22 +13,18 @@ Notes:
 
 * 'jax deep learning ecosystem'
   https://deepmind.google/discover/blog/using-jax-to-accelerate-our-research/
+* we will be avoiding eqx.filter* stuff until next time
 
-Workshop plan:
+Workshop plan: starting from code similar to last time:
 
-* starting from code similar to last time
-* implement CNN (simplified LeNet) with `equinox.nn` modules
-* configure stateful optimiser with `optax`
-* train the CNN on MNIST
+1. eqx.nn: implement simplified LeNet CNN
+2. jax.vmap: vectorise forward pass and cross entropy loss
+3. optax: state management for optimisation
 
-Challenge (choose one, both, or your own):
+Challenge:
 
 * implement a drop-in replacement for `optax.adam`
 
-TODO:
-
-* custom adaptive pooling, separate learnable modules? no filtering!
-  (the emphasis should be on optax state management this week!)
 """
 
 from typing import Literal
@@ -48,49 +44,65 @@ import mattplotlib as mp
 # Architecture
 
 
-def scaled_tanh(x):
-    return 1.7159 * jnp.tanh(0.6667 * x)
+class Subsample2x2(eqx.Module):
+    weights: Float[Array, "c"]
+    biases: Float[Array, "c"]
+
+
+    def __init__(self, num_channels: int):
+        self.weights = jnp.ones((num_channels, 1, 1)) / 4
+        self.biases = jnp.zeros((num_channels, 1, 1))
+
+
+    def __call__(self, x: Float[Array, "c h w"]) -> Float[Array, "c h w"]:
+        sums = einops.reduce(x, 'c (h 2) (w 2) -> c h w', 'sum')
+        return self.weights * sums + self.biases
 
 
 class SimpLeNet(eqx.Module):
-    layers: tuple
+    C1: eqx.nn.Conv2d
+    S2: Subsample2x2
+    C3: eqx.nn.Conv2d
+    S4: Subsample2x2
+    C5: eqx.nn.Conv2d
+    F6: eqx.nn.Linear
+    Out: eqx.nn.Linear
+
 
     def __init__(self, key: PRNGKeyArray):
         k1, k2, k3, k4, k5 = jax.random.split(key, 5)
-        self.layers = (
-            # Input:         1x28x28
-            # C1:       ->   6x28x28
-            eqx.nn.Conv2d(1, 6, kernel_size=5, padding=2, key=k1),
-            scaled_tanh,
-            # S2*:      ->   6x14x14 (note: no learnable scale/shift params)
-            eqx.nn.AvgPool2d(kernel_size=2, stride=2),
-            scaled_tanh,
-            # C3*:      ->  16x10x10 (note: fully connected channels)
-            eqx.nn.Conv2d(6, 16, kernel_size=5, padding=0, key=k2),
-            scaled_tanh,
-            # S4*:      ->  16x5x5   (note: no learnable scale/shift params)
-            eqx.nn.AvgPool2d(kernel_size=2, stride=2),
-            scaled_tanh,
-            # C5:       -> 120x1x1 -> 120
-            eqx.nn.Conv2d(16, 120, kernel_size=5, padding=0, key=k3),
-            jnp.ravel,
-            scaled_tanh,
-            # F6:       -> 84
-            eqx.nn.Linear(120, 84, key=k4),
-            scaled_tanh,
-            # Output*   -> 10     (note: learned map not hand-made RBF code)
-            eqx.nn.Linear(84, 10, key=k5),
-            jax.nn.softmax,
-        )
+        self.C1 = eqx.nn.Conv2d(1, 6, kernel_size=5, padding=2, key=k1)
+        self.S2 = Subsample2x2(num_channels=6)
+        self.C3 = eqx.nn.Conv2d(6, 16, kernel_size=5, padding=0, key=k2)
+        self.S4 = Subsample2x2(num_channels=16)
+        self.C5 = eqx.nn.Conv2d(16, 120, kernel_size=5, padding=0, key=k3)
+        self.F6 = eqx.nn.Linear(120, 84, key=k4)
+        self.Out = eqx.nn.Linear(84, 10, key=k5)
 
 
     def forward(
         self,
-        x: Float[Array, "1 28 28"],
+        image: Float[Array, "1 28 28"],
     ) -> Float[Array, "10"]:
-        for layer in self.layers:
-            x = layer(x)
-        return x
+        # Input:         1x28x28
+        x = einops.rearrange(image, 'h w -> 1 h w')
+        # C1:       ->   6x28x28
+        x = scaled_tanh(self.C1(x))
+        # S2:       ->   6x14x14
+        x = scaled_tanh(self.S2(x))
+        # C3*:      ->  16x10x10 (note: fully connected channels)
+        x = scaled_tanh(self.C3(x))
+        # S4:       ->  16x5x5
+        x = scaled_tanh(self.S4(x))
+        # C5:       -> 120x1x1 (note: equiv. dense 400->120 at this size)
+        x = scaled_tanh(self.C5(x))
+        # (flatten) -> 120
+        x = jnp.ravel(x)
+        # F6:       -> 84
+        x = scaled_tanh(self.F6(x))
+        # Output*:  -> 10 (note: learned map, no hand-made RBF code)
+        x = self.Out(x)
+        return jax.nn.softmax(x)
 
 
     def forward_batch(
@@ -98,6 +110,10 @@ class SimpLeNet(eqx.Module):
         x_batch: Float[Array, "b 1 28 28"],
     ) -> Float[Array, "b 10"]:
         return jax.vmap(self.forward)(x_batch)
+
+
+def scaled_tanh(x):
+    return 1.7159 * jnp.tanh(0.6667 * x)
 
 
 # # # 
@@ -109,7 +125,7 @@ def main(
     lr_schedule: bool = False,
     opt: Literal["sgd", "adam", "adamw"] = "sgd",
     batch_size: int = 512,
-    num_steps: int = 256,
+    num_steps: int = 128,
     steps_per_visualisation: int = 4,
     num_digits_per_visualisation: int = 15,
     seed: int = 42,
@@ -119,9 +135,9 @@ def main(
 
     print("initialising model...")
     key_model, key = jax.random.split(key)
-    model = SimpLeNet(key_model)
+    model = SimpLeNet(key=key_model)
 
-    print(model)
+    # print(model)
 
     
     print("loading and preprocessing data...")
@@ -130,12 +146,10 @@ def main(
         x_test = jnp.array(datafile['x_test'])
         y_train = jnp.array(datafile['y_train'])
         y_test = jnp.array(datafile['y_test'])
-    x_train, x_test = jax.tree.map(
-        lambda x: einops.rearrange(1.275 * x/255 - 0.1, 'b h w -> b 1 h w'),
-        (x_train, x_test),
-    )
+    x_train = 1.275 * x_train / 255 - 0.1
+    x_test = 1.275 * x_test / 255 - 0.1
 
-    print(model.forward(x_train[0]))
+    # print(model.forward(x_train[0]))
     
 
     print("initialising optimiser...")
@@ -153,7 +167,7 @@ def main(
     elif opt == 'adamw':
         optimiser = optax.adamw(learning_rate)
     # initialise the optimiser state
-    opt_state = optimiser.init(eqx.filter(model, eqx.is_array))
+    opt_state = optimiser.init(model)
     
     # print(opt_state)
 
@@ -175,7 +189,7 @@ def main(
 
 
         # compute the batch loss and grad
-        loss, grads = eqx.filter_value_and_grad(batch_cross_entropy)(
+        loss, grads = jax.value_and_grad(batch_cross_entropy)(
             model,
             x_batch,
             y_batch,
@@ -184,7 +198,7 @@ def main(
 
         # compute update, update optimiser and model
         updates, opt_state = optimiser.update(grads, opt_state, model)
-        model = eqx.apply_updates(model, updates)
+        model = optax.apply_updates(model, updates)
 
 
         # track metrics
@@ -216,11 +230,8 @@ def main(
 # Metrics
 
 
-# NOTE: START FROM LAST WEEK'S VERSIONS
-
-
 def batch_cross_entropy(
-    model: eqx.Module,
+    model: SimpLeNet,
     x_batch: Float[Array, "b h w"],
     y_batch: Int[Array, "b"],
 ) -> float:
@@ -237,7 +248,7 @@ def batch_cross_entropy(
 
 
 def cross_entropy(
-    model: eqx.Module,
+    model: SimpLeNet,
     x: Float[Array, "h w"],
     y: int,
 ) -> float:
@@ -248,7 +259,7 @@ def cross_entropy(
 
 
 def batch_accuracy(
-    model: eqx.Module,
+    model: SimpLeNet,
     x_batch: Float[Array, "b h w"],
     y_batch: Int[Array, "b"],
 ) -> float:
@@ -264,12 +275,12 @@ def batch_accuracy(
 def vis_digits(
     digits: Float[Array, "n h w"],
     true_labels: Int[Array, "n"],
-    model: eqx.Module | None = None,
+    model: SimpLeNet | None = None,
 ) -> mp.plot:
     # shrink and normalise images
     ddigits = einops.reduce(
         (digits + 0.1) / 1.275,
-        'b 1 (h 2) (w 2) -> b h w',
+        'b (h 2) (w 2) -> b h w',
         'mean',
     )
     dwidth = digits.shape[-1] // 2
