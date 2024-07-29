@@ -127,7 +127,7 @@ def main(
     batch_size: int = 512,
     num_steps: int = 128,
     steps_per_visualisation: int = 4,
-    num_digits_per_visualisation: int = 15,
+    num_digits_per_visualisation: int = 10,
     seed: int = 42,
 ):
     key = jax.random.key(seed)
@@ -242,7 +242,11 @@ def batch_cross_entropy(
         cross_entropy,
         in_axes=(None,0,0),
     )
-    all_cross_entropies = vmapped_cross_entropy_fn(model, x_batch, y_batch)
+    all_cross_entropies = vmapped_cross_entropy_fn(
+        model,
+        x_batch,
+        y_batch,
+    )
     avg_cross_entropy = all_cross_entropies.mean()
     return avg_cross_entropy
 
@@ -252,9 +256,7 @@ def cross_entropy(
     x: Float[Array, "h w"],
     y: int,
 ) -> float:
-    """
-    Hx(q, p) = - Sum_i p(i) log q(i)
-    """
+    # Cross entropy formula: Hx(q, p) = - Sum_i p(i) log q(i)
     return -jnp.log(model.forward(x)[y])
 
 
@@ -283,9 +285,7 @@ def vis_digits(
         'b (h 2) (w 2) -> b h w',
         'mean',
     )
-    dwidth = digits.shape[-1] // 2
-
-    # if predictions provided, classify as true or false
+    width = ddigits.shape[-1]
 
     # if model is provided, classify digits and mark correct or incorrect
     if model is not None:
@@ -299,7 +299,7 @@ def vis_digits(
     array = mp.wrap(*[
         mp.border(
             mp.image(ddigit, colormap=cmap)
-            ^ mp.center(mp.text(label), width=dwidth)
+            ^ mp.center(mp.text(label), width=width)
         )
         for ddigit, label, cmap in zip(ddigits, labels, cmaps)
     ], cols=5)
