@@ -82,7 +82,7 @@ class SimpLeNet(eqx.Module):
 
     def forward(
         self,
-        image: Float[Array, "1 28 28"],
+        image: Float[Array, "28 28"],
     ) -> Float[Array, "10"]:
         # Input:         1x28x28
         x = einops.rearrange(image, 'h w -> 1 h w')
@@ -107,7 +107,7 @@ class SimpLeNet(eqx.Module):
 
     def forward_batch(
         self,
-        x_batch: Float[Array, "b 1 28 28"],
+        x_batch: Float[Array, "b 28 28"],
     ) -> Float[Array, "b 10"]:
         return jax.vmap(self.forward)(x_batch)
 
