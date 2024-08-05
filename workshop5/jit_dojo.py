@@ -259,6 +259,7 @@ def lesson7():
 
     print("2. transforming function...")
     f7_filterjit = eqx.filter_jit(f7_nojit)
+    print("   f7_filterjit:", f7_filterjit)
 
     print("3. calling function with an int and an array...")
     result = f7_filterjit(
