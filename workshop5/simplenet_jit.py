@@ -1,5 +1,6 @@
 """
-CNN for handwritten digit classification, implemented with equinox and optax.
+CNN for handwritten digit classification, implemented with equinox and optax,
+and accelerated with jax.jit.
 """
 
 from typing import Literal
