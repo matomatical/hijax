@@ -3,6 +3,7 @@ CNN for handwritten digit classification, implemented with equinox and optax,
 and accelerated with jax.jit.
 """
 
+import functools
 from typing import Literal
 from jaxtyping import Array, Float, Int, PRNGKeyArray
 
@@ -30,6 +31,7 @@ class Subsample2x2(eqx.Module):
         self.biases = jnp.zeros((num_channels, 1, 1))
 
 
+    @jax.jit
     def __call__(self, x: Float[Array, "c h w"]) -> Float[Array, "c h w"]:
         sums = einops.reduce(x, 'c (h 2) (w 2) -> c h w', 'sum')
         return self.weights * sums + self.biases
@@ -56,6 +58,7 @@ class SimpLeNet(eqx.Module):
         self.Out = eqx.nn.Linear(84, 10, key=k5)
 
 
+    @jax.jit
     def forward(
         self,
         image: Float[Array, "28 28"],
@@ -81,6 +84,7 @@ class SimpLeNet(eqx.Module):
         return jax.nn.softmax(x)
 
 
+    @jax.jit
     def forward_batch(
         self,
         x_batch: Float[Array, "b 28 28"],
@@ -88,6 +92,7 @@ class SimpLeNet(eqx.Module):
         return jax.vmap(self.forward)(x_batch)
 
 
+@jax.jit
 def scaled_tanh(x):
     return 1.7159 * jnp.tanh(0.6667 * x)
 
@@ -146,12 +151,11 @@ def main(
     opt_state = optimiser.init(model)
     
     # print(opt_state)
+        
 
-
-    print("begin training...")
-    losses = []
-    accuracies = []
-    for step in tqdm.trange(num_steps, dynamic_ncols=True):
+    print("define training step...")
+    @jax.jit
+    def train_step(model, key, opt_state):
         # sample a batch
         key_batch, key = jax.random.split(key)
         batch = jax.random.choice(
@@ -163,7 +167,6 @@ def main(
         x_batch = x_train[batch]
         y_batch = y_train[batch]
 
-
         # compute the batch loss and grad
         loss, grads = jax.value_and_grad(batch_cross_entropy)(
             model,
@@ -171,17 +174,28 @@ def main(
             y_batch,
         )
 
-
         # compute update, update optimiser and model
         updates, opt_state = optimiser.update(grads, opt_state, model)
         model = optax.apply_updates(model, updates)
 
-
-        # track metrics
-        losses.append((step, loss))
+        # compute metrics
         test_acc = batch_accuracy(model, x_test[:1000], y_test[:1000])
-        accuracies.append((step, test_acc))
 
+        return model, key, opt_state, loss, test_acc
+
+
+    print("begin training...")
+    losses = []
+    accuracies = []
+    for step in tqdm.trange(num_steps, dynamic_ncols=True):
+        # call the training step
+        model, key, opt_state, loss, test_acc = train_step(
+            model,
+            key,
+            opt_state,
+        )
+        losses.append((step, loss))
+        accuracies.append((step, test_acc))
 
         # visualisation!
         if step % steps_per_visualisation == 0 or step == num_steps - 1:
@@ -206,6 +220,7 @@ def main(
 # Metrics
 
 
+@jax.jit
 def batch_cross_entropy(
     model: SimpLeNet,
     x_batch: Float[Array, "b h w"],
@@ -227,6 +242,7 @@ def batch_cross_entropy(
     return avg_cross_entropy
 
 
+@jax.jit
 def cross_entropy(
     model: SimpLeNet,
     x: Float[Array, "h w"],
@@ -236,6 +252,7 @@ def cross_entropy(
     return -jnp.log(model.forward(x)[y])
 
 
+@jax.jit
 def batch_accuracy(
     model: SimpLeNet,
     x_batch: Float[Array, "b h w"],
