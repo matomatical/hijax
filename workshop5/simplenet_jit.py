@@ -30,6 +30,7 @@ class Subsample2x2(eqx.Module):
         self.biases = jnp.zeros((num_channels, 1, 1))
 
 
+    @jax.jit
     def __call__(self, x: Float[Array, "c h w"]) -> Float[Array, "c h w"]:
         sums = einops.reduce(x, 'c (h 2) (w 2) -> c h w', 'sum')
         return self.weights * sums + self.biases
@@ -56,6 +57,7 @@ class SimpLeNet(eqx.Module):
         self.Out = eqx.nn.Linear(84, 10, key=k5)
 
 
+    @jax.jit
     def forward(
         self,
         image: Float[Array, "28 28"],
@@ -81,6 +83,7 @@ class SimpLeNet(eqx.Module):
         return jax.nn.softmax(x)
 
 
+    @jax.jit
     def forward_batch(
         self,
         x_batch: Float[Array, "b 28 28"],
@@ -88,6 +91,7 @@ class SimpLeNet(eqx.Module):
         return jax.vmap(self.forward)(x_batch)
 
 
+@jax.jit
 def scaled_tanh(x):
     return 1.7159 * jnp.tanh(0.6667 * x)
 
@@ -202,6 +206,7 @@ def main(
 # Metrics
 
 
+@jax.jit
 def batch_cross_entropy(
     model: SimpLeNet,
     x_batch: Float[Array, "b h w"],
@@ -223,6 +228,7 @@ def batch_cross_entropy(
     return avg_cross_entropy
 
 
+@jax.jit
 def cross_entropy(
     model: SimpLeNet,
     x: Float[Array, "h w"],
@@ -232,6 +238,7 @@ def cross_entropy(
     return -jnp.log(model.forward(x)[y])
 
 
+@jax.jit
 def batch_accuracy(
     model: SimpLeNet,
     x_batch: Float[Array, "b h w"],
