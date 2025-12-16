@@ -1,0 +1,4 @@
+numpy
+einops
+jax
+git+https://github.com/matomatical/matthewplotlib.git@v0.3.2-alpha
