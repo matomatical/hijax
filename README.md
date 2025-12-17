@@ -15,14 +15,29 @@ for more information.
 <table>
 <tbody>
   <tr>
-    <td><img src="gallery/lecture00.png" alt="lecture 00" height="192px"></td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td align="center"><img src="gallery/lecture00.png" height="192px"><br>Lecture 00</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 01</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 02</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 03</td>
   </tr>
-  <tr> <td></td> <td></td> <td></td> <td></td> </tr>
-  <tr> <td></td> <td></td> <td></td> <td></td> </tr>
-  <tr> <td></td> <td></td> <td></td> <td></td> </tr>
+  <tr>
+    <td align="center"><img src="" height="192px"><br>Lecture 04</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 05</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 06</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 07</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="" height="192px"><br>Lecture 08</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 09</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 10</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 11</td>
+  </tr>
+  <tr>
+    <td align="center"><img src="" height="192px"><br>Lecture 12</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 13</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 14</td>
+    <td align="center"><img src="" height="192px"><br>Lecture 15</td>
+  </tr>
 </tbody>
 </table>
 
