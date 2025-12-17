@@ -6,9 +6,6 @@
   />
 </h1>
 
-*This page is for the online edition of Hi, JAX!
-See also: [2024 edition](hijax-2024).*
-
 This is the codebase for "Hi, JAX!", an introduction to
   [JAX](https://jax.readthedocs.io/)
 for deep learning researchers.
@@ -17,6 +14,7 @@ The code examples and recording of video lectures is a work in progress. See
 the
   [course webpage](https://far.in.net/hijax)
 for more information.
+
 
 <table>
 <tbody>
@@ -47,9 +45,13 @@ for more information.
 </tbody>
 </table>
 
-(Visualisations/animations made with
-  [matthewplotlib](https://github.com/matomatical/matthewplotlib).
-Banner image made by Nano Banana Pro.)
+*Note:
+  This page is for the online edition of Hi, JAX! See also:
+    [2024 edition](hijax-2024).
+  Visualisations/animations made with
+    [matthewplotlib](https://github.com/matomatical/matthewplotlib).
+  Banner image by Nano Banana Pro.*
+
 
 Getting started
 ---------------
