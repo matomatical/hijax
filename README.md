@@ -24,7 +24,7 @@ for more information.
     <td align="center"><img src="gallery/lecture00.png" height="192px"><br>Lecture 00</td>
     <td align="center"><img src="gallery/lecture01.gif" height="192px"><br>Lecture 01</td>
     <td align="center"><img src="gallery/lecture02.gif" height="192px"><br>Lecture 02</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 03</td>
+    <td align="center"><img src="gallery/lecture03.gif" height="192px"><br>Lecture 03</td>
   </tr>
   <tr>
     <td align="center"><img src="" height="192px"><br>Lecture 04</td>
@@ -46,6 +46,10 @@ for more information.
   </tr>
 </tbody>
 </table>
+
+(Most of these visualisations/animations are by
+  [matthewplotlib](https://github.com/matomatical/matthewplotlib).
+Banner image by Nano Banana Pro.)
 
 Getting started
 ---------------
