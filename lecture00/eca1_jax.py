@@ -1,5 +1,5 @@
 import time
-import numpy as np
+import jax.numpy as jnp
 import tyro
 from jaxtyping import Array, UInt8, Bool
 import matthewplotlib as mp
@@ -37,10 +37,10 @@ def simulate(
     num_steps: int,
 ) -> UInt8[Array, "num_steps width"]:
     # parse rule
-    rule_uint8 = np.uint8(rule)
+    rule_uint8 = jnp.uint8(rule)
     print(f"rule: {rule_uint8:3d} (0b{rule_uint8:08b})")
     
-    rule_bits = np.unpackbits(rule_uint8, bitorder='little')
+    rule_bits = jnp.unpackbits(rule_uint8, bitorder='little')
     print("bits:", rule_bits)
     
     rule_table = rule_bits.reshape(2,2,2)
@@ -51,14 +51,14 @@ def simulate(
     
     # initialise state
     state: UInt8[Array, "width"]
-    state = np.zeros(width, dtype=np.uint8)
-    state[width//2] = 1
+    state = jnp.zeros(width, dtype=jnp.uint8)
+    state = state.at[width//2].set(1)
 
     # simulate
     states = [state]
     for t in range(num_steps-1):
         state_wrapped: UInt8[Array, "width+2"]
-        state_wrapped = np.pad(state, 1, mode='wrap')
+        state_wrapped = jnp.pad(state, 1, mode='wrap')
         state = rule_table[
             state_wrapped[0:-2],
             state_wrapped[1:-1],
@@ -66,7 +66,7 @@ def simulate(
         ]
         states.append(state)
     
-    return np.stack(states)
+    return jnp.stack(states)
 
 
 if __name__ == "__main__":
