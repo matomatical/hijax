@@ -4,11 +4,12 @@ Hi, JAX!
 *This page is for the online edition of Hi, JAX!
 See also: [2024 edition](hijax-2024).*
 
-This is the syllabus "Hi, JAX!", an introduction to
+This is the codebase for "Hi, JAX!", an introduction to
   [JAX](https://jax.readthedocs.io/)
 for deep learning researchers.
 
-The tutorial material and recording is a work in progress. See the
+The code examples and recording of video lectures is a work in progress. See
+the
   [course webpage](https://far.in.net/hijax)
 for more information.
 
@@ -17,7 +18,7 @@ for more information.
   <tr>
     <td align="center"><img src="gallery/lecture00.png" height="192px"><br>Lecture 00</td>
     <td align="center"><img src="gallery/lecture01.gif" height="192px"><br>Lecture 01</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 02</td>
+    <td align="center"><img src="gallery/lecture02.gif" height="192px"><br>Lecture 02</td>
     <td align="center"><img src="" height="192px"><br>Lecture 03</td>
   </tr>
   <tr>
