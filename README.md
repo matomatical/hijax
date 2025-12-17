@@ -47,9 +47,9 @@ for more information.
 </tbody>
 </table>
 
-(Most of these visualisations/animations are by
+(Visualisations/animations made with
   [matthewplotlib](https://github.com/matomatical/matthewplotlib).
-Banner image by Nano Banana Pro.)
+Banner image made by Nano Banana Pro.)
 
 Getting started
 ---------------
