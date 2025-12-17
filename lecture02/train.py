@@ -115,8 +115,6 @@ def vis_data(
 ) -> mp.plot:
     return mp.axes(
         mp.scatter(
-            # mp.xaxis(-3, 3, 80),
-            # mp.yaxis(-3, 3, 80),
             (xs[:,0], xs[:,1], mp.cyber(ys.astype(float))),
             xrange=(-3,+3),
             yrange=(-3,+3),
@@ -144,11 +142,9 @@ def vis_model(
     # plot
     return mp.axes(
         mp.scatter(
-            # mp.xaxis(-3, 3, 80),
-            # mp.yaxis(-3, 3, 80),
             (xs[:,0], xs[:,1], mp.cyber(ys_pred)),
             (xs[(step,),0], xs[(step,),1], (0,0,0)),
-            (x0, y0, mp.cyber(.5)),
+            (x0, y0, "white"),
             xrange=(-3,+3),
             yrange=(-3,+3),
             width=40,
