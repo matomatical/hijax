@@ -10,11 +10,13 @@ This is the codebase for "Hi, JAX!", an introduction to
   [JAX](https://jax.readthedocs.io/)
 for deep learning researchers.
 
-The code examples and recording of video lectures is a work in progress. See
-the
-  [course webpage](https://far.in.net/hijax)
-for more information.
+The code examples and recording of video lectures is a work in progress.
 
+See the
+  [course webpage](https://far.in.net/hijax)
+for more information, including prerequisites and syllabus.
+
+<!--TODO: Link lecture recordings.-->
 
 <table>
 <tbody>
@@ -56,7 +58,20 @@ for more information.
 Getting started
 ---------------
 
-Create a virtual environment, within which, install the requirements:
+Create a virtual environment, for example with
+  [uv](https://docs.astral.sh/uv/getting-started/installation/#pypi):
+
+```
+uv venv hijax.venv
+```
+
+Enter the virtual environment:
+
+```
+source hijax.venv/bin/activate
+```
+
+Install the requirements:
 
 ```
 pip install -r requirements.txt
