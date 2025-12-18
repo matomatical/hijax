@@ -10,7 +10,13 @@ This is the codebase for "Hi, JAX!", an introduction to
   [JAX](https://jax.readthedocs.io/)
 for deep learning researchers.
 
-The code examples and recording of video lectures are a work in progress.
+The code examples and recording of video lectures are a work in progress:
+
+* Code examples: 10/16.
+* Video lectures: 0/16.
+
+For full syllabus information, see the
+  [course website](https://far.in.net/hijax).
 
 <!--TODO: Link lecture recordings.-->
 
@@ -88,7 +94,7 @@ Syllabus
 --------
 
 For full syllabus information, see the
-  [course website](https://far.in.net/hijax)
+  [course website](https://far.in.net/hijax).
 
 ### Overture
 
