@@ -35,7 +35,7 @@ for more information, including prerequisites and syllabus.
   <tr>
     <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 08</td>
     <td align="center"><img src="gallery/lecture09.gif" height="192px"><br>Lecture 09</td>
-    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 10</td>
+    <td align="center"><img src="gallery/lecture10.gif" height="192px"><br>Lecture 10</td>
     <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 11</td>
   </tr>
   <tr>
