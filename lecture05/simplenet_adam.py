@@ -301,17 +301,12 @@ class SimpLeNet:
         x = self.Out.forward(x)
         return jax.nn.softmax(x)
 
-    def forward_batch(
+    def batch_forward(
         self,
         images: Float[Array, "batch_size 28 28"],
     ) -> Float[Array, "batch_size 10"]:
-        forward = SimpLeNet.forward
-        vforward = jax.vmap(
-            forward,
-            in_axes=(None, 0),
-            out_axes=0,
-        )
-        return vforward(self, images)
+        return jax.vmap(self.forward)(images)
+
 
 # # # 
 # Optimiser
@@ -425,7 +420,7 @@ def batch_accuracy(
     x_batch: Float[Array, "b h w"],
     y_batch: Int[Array, "b"],
 ) -> float:
-    pred_prob_all_classes = model.forward_batch(x_batch)
+    pred_prob_all_classes = model.batch_forward(x_batch)
     highest_prob_class = pred_prob_all_classes.argmax(axis=-1)
     return jnp.mean(y_batch == highest_prob_class)
 
@@ -448,7 +443,7 @@ def vis_digits(
     width = ddigits.shape[-1]
 
     # classify digits and mark correct or incorrect
-    pred_probs = model.forward_batch(digits)
+    pred_probs = model.batch_forward(digits)
     pred_labels = pred_probs.argmax(axis=-1)
     corrects = (true_labels == pred_labels)
     cmaps = [mp.cyans if correct else mp.magentas for correct in corrects]

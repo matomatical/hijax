@@ -5,3 +5,5 @@ git+https://github.com/matomatical/matthewplotlib.git@v0.3.4
 tyro
 jaxtyping
 pillow
+pcax
+tqdm
