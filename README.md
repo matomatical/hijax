@@ -25,22 +25,22 @@ for more information.
     <td align="center"><img src="gallery/lecture03.gif" height="192px"><br>Lecture 03</td>
   </tr>
   <tr>
-    <td align="center"><img src="" height="192px"><br>Lecture 04</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 05</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 06</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 07</td>
+    <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 04</td>
+    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 05</td>
+    <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 06</td>
+    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 07</td>
   </tr>
   <tr>
-    <td align="center"><img src="" height="192px"><br>Lecture 08</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 09</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 10</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 11</td>
+    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 08</td>
+    <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 09</td>
+    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 10</td>
+    <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 11</td>
   </tr>
   <tr>
-    <td align="center"><img src="" height="192px"><br>Lecture 12</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 13</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 14</td>
-    <td align="center"><img src="" height="192px"><br>Lecture 15</td>
+    <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 12</td>
+    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 13</td>
+    <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 14</td>
+    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 15</td>
   </tr>
 </tbody>
 </table>
