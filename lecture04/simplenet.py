@@ -25,7 +25,109 @@ import einops
 
 
 # # # 
+# Training loop
+
+
+def main(
+    learning_rate: float = 0.05,
+    batch_size: int = 512,
+    num_steps: int = 256,
+    steps_per_visualisation: int = 4,
+    seed: int = 42,
+):
+    key = jax.random.key(seed)
+
+
+    print("initialising model...")
+    key_model, key = jax.random.split(key)
+    model = SimpLeNet.init(key=key_model)
+
+    print(jax.tree.map(lambda l: jnp.array(l).shape, model))
+
+
+    print("loading and preprocessing data...")
+    with jnp.load('mnist.npz') as datafile:
+        x_train = jnp.array(datafile['x_train'])
+        x_test = jnp.array(datafile['x_test'])
+        y_train = jnp.array(datafile['y_train'])
+        y_test = jnp.array(datafile['y_test'])
+    x_train = 1.275 * x_train / 255 - 0.1
+    x_test = 1.275 * x_test / 255 - 0.1
+    
+    probs = model.forward(x_train[0])
+    print(vis_digits(
+        digits=x_train[:6],
+        true_labels=y_train[:6],
+        model=model,
+    ))
+
+    
+    print("begin training...")
+    losses = []
+    accuracies = []
+    plots = []
+    for step in range(num_steps):
+        # sample a batch
+        key_batch, key = jax.random.split(key)
+        batch = jax.random.choice(
+            key=key_batch,
+            a=y_train.size,
+            shape=(batch_size,),
+            replace=False,
+        )
+        x_batch = x_train[batch]
+        y_batch = y_train[batch]
+
+        # compute the batch loss and grad
+        loss, grads = jax.value_and_grad(batch_cross_entropy)(
+            model,
+            x_batch,
+            y_batch,
+        )
+
+        # compute update, update optimiser and model
+        model = jax.tree.map(
+            lambda leaf_w, leaf_g: leaf_w - learning_rate * leaf_g,
+            model,
+            grads,
+        )
+
+        # track metrics
+        losses.append((step, loss))
+        test_acc = batch_accuracy(model, x_test[:1000], y_test[:1000])
+        accuracies.append((step, test_acc))
+
+        # visualisation!
+        if step % steps_per_visualisation == 0 or step == num_steps - 1:
+            digit_plot = vis_digits(
+                digits=x_test[(1,6,7,8),],
+                true_labels=y_test[(1,6,7,8),],
+                model=model,
+            )
+            metrics_plot = vis_metrics(
+                losses=losses,
+                accuracies=accuracies,
+                total_num_steps=num_steps,
+            )
+            plot = digit_plot / metrics_plot
+            if step == 0:
+                print(plot)
+            else:
+                print(f"\x1b[{plot.height}A{plot}")
+            plots.append(plot)
+
+
+    # mp.save_animation(
+    #     plots,
+    #     "../gallery/lecture04.gif",
+    #     bgcolor="black",
+    #     fps=10,
+    # )
+
+
+# # # 
 # Architecture
+
 
 @jax.tree_util.register_dataclass
 @dataclasses.dataclass
@@ -214,104 +316,6 @@ class SimpLeNet:
 
 
 # # # 
-# Training loop
-
-
-def main(
-    learning_rate: float = 0.05,
-    batch_size: int = 512,
-    num_steps: int = 256,
-    steps_per_visualisation: int = 4,
-    seed: int = 42,
-):
-    key = jax.random.key(seed)
-
-    print("initialising model...")
-    key_model, key = jax.random.split(key)
-    model = SimpLeNet.init(key=key_model)
-
-    print(jax.tree.map(lambda l: jnp.array(l).shape, model))
-
-    print("loading and preprocessing data...")
-    with jnp.load('mnist.npz') as datafile:
-        x_train = jnp.array(datafile['x_train'])
-        x_test = jnp.array(datafile['x_test'])
-        y_train = jnp.array(datafile['y_train'])
-        y_test = jnp.array(datafile['y_test'])
-    x_train = 1.275 * x_train / 255 - 0.1
-    x_test = 1.275 * x_test / 255 - 0.1
-    
-    probs = model.forward(x_train[0])
-    print(vis_digits(
-        digits=x_train[:6],
-        true_labels=y_train[:6],
-        model=model,
-    ))
-
-    
-    print("begin training...")
-    losses = []
-    accuracies = []
-    plots = []
-    for step in range(num_steps):
-        # sample a batch
-        key_batch, key = jax.random.split(key)
-        batch = jax.random.choice(
-            key=key_batch,
-            a=y_train.size,
-            shape=(batch_size,),
-            replace=False,
-        )
-        x_batch = x_train[batch]
-        y_batch = y_train[batch]
-
-        # compute the batch loss and grad
-        loss, grads = jax.value_and_grad(batch_cross_entropy)(
-            model,
-            x_batch,
-            y_batch,
-        )
-
-        # compute update, update optimiser and model
-        model = jax.tree.map(
-            lambda leaf_w, leaf_g: leaf_w - learning_rate * leaf_g,
-            model,
-            grads,
-        )
-
-        # track metrics
-        losses.append((step, loss))
-        test_acc = batch_accuracy(model, x_test[:1000], y_test[:1000])
-        accuracies.append((step, test_acc))
-
-        # visualisation!
-        if step % steps_per_visualisation == 0 or step == num_steps - 1:
-            digit_plot = vis_digits(
-                digits=x_test[(1,6,7,8),],
-                true_labels=y_test[(1,6,7,8),],
-                model=model,
-            )
-            metrics_plot = vis_metrics(
-                losses=losses,
-                accuracies=accuracies,
-                total_num_steps=num_steps,
-            )
-            plot = digit_plot / metrics_plot
-            if step == 0:
-                print(plot)
-            else:
-                print(f"\x1b[{plot.height}A{plot}")
-            plots.append(plot)
-
-    mp.save_animation(
-        plots,
-        "../gallery/lecture04.gif",
-        bgcolor="black",
-        fps=10,
-    )
-
-
-# # # 
 # Metrics
 
 
@@ -435,5 +439,4 @@ def vis_metrics(
 # Entry point
 
 if __name__ == "__main__":
-    import tyro
     tyro.cli(main)
