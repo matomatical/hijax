@@ -2,14 +2,13 @@
 Lecture 03: Hi, PyTrees!
 
 Demonstration: Implement and train a multi-layer perceptron on MNIST with
-minibatch SGD perceptron with classical
-stochastic gradient descent.
+minibatch SGD.
 
 Learning objectives:
 
 * more jax.numpy and jax.random
 * introducing "PyTrees"
-* introducing jax.tree, particularly jax.tree.map
+* introducing jax.tree and jax.tree_util
 """
 
 import dataclasses
