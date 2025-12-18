@@ -116,12 +116,12 @@ def main(
                 print(f"\x1b[{plot.height}A{plot}")
             plots.append(plot)
 
-    # mp.save_animation(
-    #     plots,
-    #     "../gallery/lecture05.gif",
-    #     bgcolor="black",
-    #     fps=5,
-    # )
+    mp.save_animation(
+        plots,
+        "../gallery/lecture05.gif",
+        bgcolor="black",
+        fps=5,
+    )
 
 
 # # # 
@@ -460,9 +460,8 @@ def vis_digits(
                 column_spacing=1,
                 colors=[mp.cyber(i==label) for i in range(10)],
             ) / mp.text(" ".join(str(d) for d in range(10)))
-            + mp.blank(width=2)
             + mp.image(ddigit, colormap=cmap),
-            title="p( digit | image )──────image────",
+            title="p( digit | image )────image────",
         )
         for ddigit, label, probs, cmap in zip(ddigits, true_labels, pred_probs, cmaps)
     ], cols=2)
@@ -481,7 +480,7 @@ def vis_metrics(
             (losses, 'magenta'),
             xrange=(0, total_num_steps-1),
             yrange=(0, max(l for s, l in losses)),
-            width=35,
+            width=33,
             height=11,
         ),
         title=f"cross entropy {losses[-1][1]:.3f}",
@@ -492,7 +491,7 @@ def vis_metrics(
             (accuracies, 'cyan'),
             xrange=(0, total_num_steps-1),
             yrange=(0, 1),
-            width=35,
+            width=33,
             height=11,
         ),
         title=f"test accuracy {accuracies[-1][1]:.2%}",
