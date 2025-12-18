@@ -62,18 +62,11 @@ Create a virtual environment, within which, install the requirements:
 pip install -r requirements.txt
 ```
 
-Note: By default, this will install JAX to use the CPU. If you want to run JAX
-on a GPU:
+Note: That command will install JAX to use the CPU.
 
-```
-pip install jax[gpu]
-```
+* If you want to run JAX on a GPU with CUDA 13: `pip install jax[cuda13]`
+* If you want to run JAX on a TPU: `pip install jax[tpu]`
+* More generally see the
+  [JAX installation instructions](https://docs.jax.dev/en/latest/installation.html)
 
-Or, if you want to run JAX on a TPU:
-
-```
-pip install jax[tpu]
-```
-
-From there, you should be able to follow along with each tutorial.
-
+From there, you should be able to follow along with each video tutorial.
