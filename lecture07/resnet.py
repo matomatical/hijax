@@ -70,6 +70,7 @@ def main(
     losses = []
     accuracies = []
     plots = []
+    # TODO: scan this loop
     for step in tqdm.trange(num_steps):
         # sample a batch
         key_batch, key = jax.random.split(key)
@@ -206,6 +207,7 @@ class DenseResNet:
                 num_inputs=784,
                 num_outputs=128,
             ),
+            # TODO: vmap
             layers=[
                 AffineTransform.init(
                     key=k,
@@ -231,6 +233,7 @@ class DenseResNet:
         x = jnp.tanh(x)
 
         # layers
+        # TODO: Scan
         for layer in self.layers:
             r = layer.forward(x)
             r = jnp.tanh(r)
@@ -262,6 +265,7 @@ class DenseResNet:
         x = jnp.tanh(x)
 
         # layers
+        # TODO: scan
         activations = [x]
         for layer in self.layers:
             r = layer.forward(x)
