@@ -150,6 +150,7 @@ def walk(
     def step(carry, input_):
         key, state = carry
         # take a step
+        # TODO: Conditional random policy, another good exercise
         key_step, key = jax.random.split(key)
         action = jax.random.choice(
             key=key_step,

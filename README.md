@@ -10,11 +10,7 @@ This is the codebase for "Hi, JAX!", an introduction to
   [JAX](https://jax.readthedocs.io/)
 for deep learning researchers.
 
-The code examples and recording of video lectures is a work in progress.
-
-See the
-  [course webpage](https://far.in.net/hijax)
-for more information, including prerequisites and syllabus.
+The code examples and recording of video lectures are a work in progress.
 
 <!--TODO: Link lecture recordings.-->
 
@@ -54,7 +50,134 @@ for more information, including prerequisites and syllabus.
     [matthewplotlib](https://github.com/matomatical/matthewplotlib).
   Banner image by Nano Banana Pro.*
 
+Prerequisites
+-------------
 
+Programming:
+
+* Prior experience programming in Python
+  (e.g., collections, dataclasses, functools, type annotations).
+* Prior experience programming in NumPy.
+  * NumPy [basics](https://numpy.org/doc/stable/user/absolute_beginners.html)
+    tutorial should be sufficient.
+* Prior experience with einops.
+  * Einops [basics](https://einops.rocks/1-einops-basics/)
+    tutorial more than sufficient.
+
+Machine learning:
+
+* Basic vector calculus and optimisation (stochastic gradient descent).
+* Basic deep learning architectures (MLP, CNN, Transformer).
+  * [3Blue1Brown Season 3](https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi)
+    should be sufficient (skip chapter 4).
+
+*Helpful/optional (we will cover what is required):*
+
+* Basic reinforcement learning
+    (Markov decision process formalism, policy gradients).
+* Prior experience programming in, e.g., Rust
+    (the concept of immutability).
+* Prior experience programming in, e.g., Haskell
+    (the concepts of pure functions, mapping, folding).
+
+You will need a Python environment (but not necessarily a GPU) if you want to
+code along during the workshops.
+
+
+Syllabus
+--------
+
+For full syllabus information, see the
+  [course website](https://far.in.net/hijax)
+
+### Overture
+
+In which we first meet JAX and get a taste of how it differs from NumPy.
+
+0.  **Hi, JAX! How's life?**
+    Quick overview of JAX features, `jax.numpy` library.
+
+### Act I: Basics
+
+In which we learn the elementary components of JAX programs while implementing
+and training increasingly complex neural networks.
+
+1.  **Hi, automatic differentiation!**
+    Functional model API, `jax.grad` transformation.
+
+2.  **Hi, procedural random number generation!**
+    Immutable PRNG state management, `jax.random` library.
+
+3.  **Hi, PyTrees!**
+    PyTrees, `jax.tree.map`.
+
+4.  **Hi, automatic vectorisation!**
+    Vectorisation with `jax.vmap`.
+
+5.  **Hi, stateful optimisation!**
+    Managing state during a training loop.
+
+### Act II: Acceleration
+
+In which we explore various aspects of just-in-time compilation and the kinds
+of tricks we need to use to prepare our computational graphs for the XLA
+compiler.
+
+6.  **Hi, just-in-time compilation!**
+    Compilation with `jax.jit`, tracing versus execution, side-effects,
+    debugging tools.
+
+7.  **Hi, loop acceleration!**
+    Looping computations with `jax.lax.scan`.
+
+8.  **Hi, static arguments!**
+    Compile errors due to non-static shapes, flagging static arguments.
+
+9.  **Hi, branching computation!**
+    Stateful environment API, conditional computation with `jax.lax.select`,
+    `jax.numpy.where`, and expression-level branching.
+    
+10. **Hi, algorithms!**
+    Performance considerations for branching computation and parallelism,
+    `jax.lax.while`.
+
+### Act III: Deep learning ecosystem
+
+In which we graduate from vanilla JAX to sample and evaluate the APIs and
+abstractions that others in the JAX deep learning community have been
+developing for accelerating deep learning programs/programmers.
+
+11. **Hi, optimisation!**
+    Stateful optimisation with `optax`.
+
+12. **Hi, data loading!**
+    Whirlwind tour of data loading libraries usable with JAX.
+
+
+13. **Hi, modules!**
+    Tour of deep neural networks with
+      Patrick Kidger's
+        [equinox](https://docs.kidger.site/equinox/)
+      and Google DeepMind's
+        [Flax NNX](https://flax.readthedocs.io/en/latest/index.html)
+      (plus legacy libraries
+      Google's
+        [Flax Linen](https://flax-linen.readthedocs.io/en/latest/)
+      DeepMind's
+        [Haiku](https://dm-haiku.readthedocs.io/en/latest/)).
+    
+14. **Hi, checkpointing!**
+    Checkpoint trained models with `orbax.checkpoint`.
+    
+### Finale
+
+In which we bring together everything we have learned to accelerate an
+end-to-end deep reinforcement learning environment simulation and training
+loop, one of the most effective uses of JAX for deep learning.
+
+15. **Hi, deep reinforcement learning!**
+    Revision of previous fundamental topics, reverse `scan`.
+    
 Getting started
 ---------------
 
