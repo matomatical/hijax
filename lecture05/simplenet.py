@@ -6,7 +6,7 @@ training state throughout the training loop.
 
 Learning objectives:
 
-* more practice with PyTrees
+* more practice with PyTrees, especially jax.tree.map
 * more practice managing state within a training loop
 """
 
@@ -16,7 +16,7 @@ import time
 import tyro
 import matthewplotlib as mp
 
-from jaxtyping import Int, Float, Array, PRNGKeyArray
+from jaxtyping import Int, Float, Array, PRNGKeyArray, PyTree
 from typing import Self
 
 import numpy as np
@@ -30,7 +30,9 @@ import einops
 
 
 def main(
-    learning_rate: float = 0.05,
+    learning_rate: float = 0.001,
+    adam_beta1: float = 0.9,
+    adam_beta2: float = 0.999,
     batch_size: int = 512,
     num_steps: int = 256,
     steps_per_visualisation: int = 4,
@@ -38,11 +40,11 @@ def main(
 ):
     key = jax.random.key(seed)
 
+
     print("initialising model...")
     key_model, key = jax.random.split(key)
     model = SimpLeNet.init(key=key_model)
 
-    print(jax.tree.map(lambda l: jnp.array(l).shape, model))
 
     print("loading and preprocessing data...")
     with jnp.load('mnist.npz') as datafile:
@@ -52,15 +54,17 @@ def main(
         y_test = jnp.array(datafile['y_test'])
     x_train = 1.275 * x_train / 255 - 0.1
     x_test = 1.275 * x_test / 255 - 0.1
-    
-    probs = model.forward(x_train[0])
-    print(vis_digits(
-        digits=x_train[:6],
-        true_labels=y_train[:6],
-        model=model,
-    ))
 
+
+    print("initialising optimiser...")
+    opt_state = Adam.init(
+        model=model,
+        alpha=learning_rate,
+        beta1=adam_beta1,
+        beta2=adam_beta2,
+    )
     
+
     print("begin training...")
     losses = []
     accuracies = []
@@ -84,12 +88,9 @@ def main(
             y_batch,
         )
 
-        # compute update, update optimiser and model
-        model = jax.tree.map(
-            lambda leaf_w, leaf_g: leaf_w - learning_rate * leaf_g,
-            model,
-            grads,
-        )
+        # compute update, update optimiser, update model
+        delta, opt_state = opt_state.update(grads)
+        model = jax.tree.map(jnp.add, model, delta)
 
         # track metrics
         losses.append((step, loss))
@@ -117,9 +118,9 @@ def main(
 
     mp.save_animation(
         plots,
-        "../gallery/lecture04.gif",
+        "../gallery/lecture05.gif",
         bgcolor="black",
-        fps=10,
+        fps=5,
     )
 
 
@@ -311,6 +312,78 @@ class SimpLeNet:
             out_axes=0,
         )
         return vforward(self, images)
+
+# # # 
+# Optimiser
+
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class Adam:
+    moment1: PyTree["model"]
+    moment2: PyTree["model"]
+    alpha: float
+    beta1: float
+    beta2: float
+    time: int
+
+    @staticmethod
+    def init(
+        model: PyTree["model"],
+        alpha: float,
+        beta1: float,
+        beta2: float,
+    ) -> Self:
+        return Adam(
+            moment1=jax.tree.map(jnp.zeros_like, model),
+            moment2=jax.tree.map(jnp.zeros_like, model),
+            alpha=alpha,
+            beta1=beta1,
+            beta2=beta2,
+            time=0,
+        )
+
+    def update(
+        self: Self,
+        grads: PyTree["model"],
+    ) -> tuple[
+        PyTree["model"],
+        Self,
+    ]:
+        # update optimiser state
+        t = self.time + 1
+        moment1 = jax.tree.map(
+            lambda m1, g: self.beta1 * m1 + (1-self.beta1) * g,
+            self.moment1,
+            grads,
+        )
+        moment2 = jax.tree.map(
+            lambda m2, g: self.beta2 * m2 + (1-self.beta2) * g**2,
+            self.moment2,
+            grads,
+        )
+        new_state = dataclasses.replace(
+            self,
+            moment1=moment1,
+            moment2=moment2,
+            time=t,
+        )
+
+        # compute model update from optimiser state
+        moment1_unbiased = jax.tree.map(
+            lambda m1: m1 / (1-self.beta1**t),
+            new_state.moment1,
+        )
+        moment2_unbiased = jax.tree.map(
+            lambda m2: m2 / (1-self.beta2**t),
+            new_state.moment2,
+        )
+        update = jax.tree.map(
+            lambda m1, m2: - self.alpha * m1 / (jnp.sqrt(m2) + 1e-8),
+            moment1_unbiased,
+            moment2_unbiased,
+        )
+        return update, new_state
 
 
 # # # 

@@ -85,9 +85,9 @@ def main(
             y_batch,
         )
 
-        # compute update, update optimiser and model
+        # update model
         model = jax.tree.map(
-            lambda leaf_w, leaf_g: leaf_w - learning_rate * leaf_g,
+            lambda w, g: w - learning_rate * g,
             model,
             grads,
         )
@@ -117,12 +117,12 @@ def main(
             plots.append(plot)
 
 
-    # mp.save_animation(
-    #     plots,
-    #     "../gallery/lecture04.gif",
-    #     bgcolor="black",
-    #     fps=10,
-    # )
+    mp.save_animation(
+        plots,
+        "../gallery/lecture04.gif",
+        bgcolor="black",
+        fps=5,
+    )
 
 
 # # # 
