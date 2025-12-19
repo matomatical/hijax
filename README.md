@@ -12,8 +12,8 @@ for deep learning researchers.
 
 The code examples and recording of video lectures are a work in progress:
 
-* Code examples: 11/16.
-* Video lectures: 0/16.
+* Code examples: 11/12.
+* Video lectures: 0/12.
 
 For full syllabus information, see the
   [course website](https://far.in.net/hijax).
