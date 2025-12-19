@@ -451,18 +451,18 @@ def vis_digits(
     # build the visualisation
     array = mp.wrap(*[
         mp.blank(width=3)
-        + mp.border(
-            mp.columns(
-                probs,
-                height=6,
-                vrange=1,
-                column_width=1,
-                column_spacing=1,
-                colors=[mp.cyber(i==label) for i in range(10)],
-            ) / mp.text(" ".join(str(d) for d in range(10)))
-            + mp.image(ddigit, colormap=cmap),
-            title="p( digit | image )────image────",
+        + mp.text("p( digit | image )")
+        / mp.columns(
+            probs,
+            height=6,
+            vrange=1,
+            column_width=1,
+            column_spacing=1,
+            colors=[mp.cyber(i==label) for i in range(10)],
         )
+        / mp.text(" ".join(str(d) for d in range(10)))
+        + mp.text("image")
+        / mp.image(ddigit, colormap=cmap)
         for ddigit, label, probs, cmap in zip(ddigits, true_labels, pred_probs, cmaps)
     ], cols=2)
     return array
@@ -480,7 +480,7 @@ def vis_metrics(
             (losses, 'magenta'),
             xrange=(0, total_num_steps-1),
             yrange=(0, max(l for s, l in losses)),
-            width=33,
+            width=31,
             height=11,
         ),
         title=f"cross entropy {losses[-1][1]:.3f}",
@@ -491,7 +491,7 @@ def vis_metrics(
             (accuracies, 'cyan'),
             xrange=(0, total_num_steps-1),
             yrange=(0, 1),
-            width=33,
+            width=31,
             height=11,
         ),
         title=f"test accuracy {accuracies[-1][1]:.2%}",
