@@ -12,7 +12,7 @@ for deep learning researchers.
 
 The code examples and recording of video lectures are a work in progress:
 
-* Code examples: 10/16.
+* Code examples: 11/16.
 * Video lectures: 0/16.
 
 For full syllabus information, see the
@@ -38,13 +38,7 @@ For full syllabus information, see the
     <td align="center"><img src="gallery/lecture08.gif" height="192px"><br>Lecture 08</td>
     <td align="center"><img src="gallery/lecture09.gif" height="192px"><br>Lecture 09</td>
     <td align="center"><img src="gallery/lecture10.gif" height="192px"><br>Lecture 10</td>
-    <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 11</td>
-  </tr>
-  <tr>
-    <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 12</td>
-    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 13</td>
-    <td align="center"><img src="gallery/placeholder1.jpg" height="192px"><br>Lecture 14</td>
-    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 15</td>
+    <td align="center"><img src="gallery/placeholder2.jpg" height="192px"><br>Lecture 11</td>
   </tr>
 </tbody>
 </table>
@@ -146,34 +140,6 @@ compiler.
 10. **Hi, algorithms!**
     Performance considerations for branching computation and parallelism,
     `jax.lax.while`.
-
-### Act III: Deep learning ecosystem
-
-In which we graduate from vanilla JAX to sample and evaluate the APIs and
-abstractions that others in the JAX deep learning community have been
-developing for accelerating deep learning programs/programmers.
-
-11. **Hi, optimisation!**
-    Stateful optimisation with `optax`.
-
-12. **Hi, data loading!**
-    Whirlwind tour of data loading libraries usable with JAX.
-
-
-13. **Hi, modules!**
-    Tour of deep neural networks with
-      Patrick Kidger's
-        [equinox](https://docs.kidger.site/equinox/)
-      and Google DeepMind's
-        [Flax NNX](https://flax.readthedocs.io/en/latest/index.html)
-      (plus legacy libraries
-      Google's
-        [Flax Linen](https://flax-linen.readthedocs.io/en/latest/)
-      DeepMind's
-        [Haiku](https://dm-haiku.readthedocs.io/en/latest/)).
-    
-14. **Hi, checkpointing!**
-    Checkpoint trained models with `orbax.checkpoint`.
     
 ### Finale
 
@@ -181,7 +147,7 @@ In which we bring together everything we have learned to accelerate an
 end-to-end deep reinforcement learning environment simulation and training
 loop, one of the most effective uses of JAX for deep learning.
 
-15. **Hi, deep reinforcement learning!**
+11. **Hi, deep reinforcement learning!**
     Revision of previous fundamental topics, reverse `scan`.
     
 Getting started
