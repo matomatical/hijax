@@ -65,13 +65,14 @@ class Model:
         W1 = jax.random.normal(
             key=key_W1,
             shape=(2, num_hidden),
-        )
+        ) / jnp.sqrt(num_hidden) # NOTE: I forgot to normalise during video!
         b1 = jnp.zeros(num_hidden)
         key_W2, key = jax.random.split(key)
         W2 = jax.random.normal(
             key=key_W2,
             shape=(num_hidden, 1),
-        )
+        ) / jnp.sqrt(num_hidden) # NOTE: I forgot to normalise during video!
+        # Adding this normalisation makes training a bit more stable.
         b2 = jnp.zeros(1)
         return Model(W1=W1, b1=b1, W2=W2, b2=b2)
 
