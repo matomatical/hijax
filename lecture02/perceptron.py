@@ -7,6 +7,7 @@ stochastic gradient descent.
 Learning objectives:
 
 * introducing jax.random
+* more practice with jax arrays, jax.grad
 """
 
 import time
@@ -18,95 +19,20 @@ import jax
 import jax.numpy as jnp
 
 
+# # # 
+# ENTRY POINT
+
+
 def main(
     num_points: int = 256,
     learning_rate: float = 0.2,
     seed: int = 42,
 ):
-    # initialise random number generator
-    key = jax.random.key(seed=seed)
-    
-    # initialise training data
-    key_pos, key = jax.random.split(key)
-    xs_pos = jax.random.multivariate_normal(
-        key=key_pos,
-        mean=jnp.ones(2),
-        cov=.25 * jnp.eye(2),
-        shape=(num_points//2,),
-    )
-    ys_pos = jnp.ones(num_points//2, dtype=bool)
-    
-    key_neg, key = jax.random.split(key)
-    xs_neg = jax.random.multivariate_normal(
-        key=key_neg,
-        mean=-jnp.ones(2),
-        cov=.25 * jnp.eye(2),
-        shape=(num_points//2,),
-    )
-    ys_neg = jnp.zeros(num_points//2, dtype=bool)
-
-    # combine training data
-    xs = jnp.concatenate([xs_pos, xs_neg], axis=0)
-    ys = jnp.concatenate([ys_pos, ys_neg], axis=0)
-
-    # shuffle training data
-    key_shuffle, key = jax.random.split(key)
-    pi = jax.random.permutation(
-        key=key_shuffle,
-        x=ys.size,
-    )
-    xs = xs[pi]
-    ys = ys[pi]
-
-    print(vis_data(xs, ys))
-    
-
-    # initialise model
-    key_model_init, key = jax.random.split(key)
-    w = jax.random.normal(
-        key=key_model_init,
-        shape=(3,),
-    )
-
-    
-    # training loop
-    plot = vis_model(w, xs, 0)
-    plots = [plot]
-    print(plot)
-    for t, (x, y) in enumerate(zip(xs, ys)):
-        l, g = jax.value_and_grad(loss)(w, x, y)
-        w = w - learning_rate * g
-        plot = vis_model(w, xs, t)
-        print(f"{-plot}{plot}")
-        plots.append(plot)
-        time.sleep(0.02)
-
-    mp.save_animation(
-        plots,
-        "../gallery/lecture02.gif",
-        bgcolor="black",
-        fps=50,
-    )
+    # TODO
 
 
-def forward(
-    w: Float[Array, "3"],
-    x: Float[Array, "2"],
-) -> float:
-    a = w[:2]
-    b = w[2]
-    logit = jnp.dot(x, a) + b
-    return logit
-
-
-def loss(
-    w: Float[Array, "3"],
-    x: Float[Array, "2"],
-    y: bool,
-) -> float:
-    logit = forward(w, x)
-    cross_entropy = jnp.logaddexp(0, logit) - y * logit
-    return cross_entropy
+# # # 
+# VISUALISATION CODE
 
 
 def vis_data(
