@@ -37,11 +37,11 @@ def main(
     print(f"time taken {end_time - start_time:.5f} seconds")
 
     if print_image:
-        print(mp.image((0.2 + states) / 1.2))
+        print(mp.image((1.2 - states) / 1.2))
 
     if save_image:
         print("rendering to 'output.png'...")
-        Image.fromarray(255 * states).save('output.png')
+        Image.fromarray(255 - 255 * states).save('output.png')
 
 
 def simulate(
