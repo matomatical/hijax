@@ -1,3 +1,16 @@
+"""
+Lecture 00: Hi, JAX! How's life?
+
+Demonstration: Port an elementary cellular automaton simulator from NumPy to
+JAX.
+
+Learning objectives:
+
+1. Introduction to jax.numpy (jnp)
+2. First look at some JAX function transformations (jit, vmap)
+3. Exploration of performance aspects of NumPy, JAX, JIT
+"""
+
 import time
 import jax.numpy as jnp
 import tyro
