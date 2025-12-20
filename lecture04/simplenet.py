@@ -11,7 +11,7 @@ Learning objectives:
 
 import functools
 import dataclasses
-import time
+# import time # unused
 import tyro
 import matthewplotlib as mp
 
