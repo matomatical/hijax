@@ -125,7 +125,7 @@ class ByteSequenceModel:
         tokens_one_hot = jax.nn.one_hot(byte_array, num_classes=128)
         next_tokens_logits = self.decode_transformer.forward(tokens_one_hot)
         next_tokens_probs = jax.nn.softmax(next_tokens_logits, axis=-1)
-        return next_token_probs
+        return next_tokens_probs
 
     @staticmethod
     def init(
@@ -179,8 +179,8 @@ class DecodeTransformer:
 
         # unembedding
         x_norm = jax.vmap(self.unembedding_layernorm.forward)(x)
-        logits = jax.vmap(self.unembedding.forward)(x_norm)
-        return logits
+        y = jax.vmap(self.unembedding.forward)(x_norm)
+        return y
 
     @staticmethod
     def init(
@@ -445,6 +445,7 @@ class MultiHeadedCausalSelfAttention:
             p = jax.nn.softmax(a, axis=-1)
             # mix values for each key   tq prob(tk) @ tv c -> t c
             y = p @ v
+            return y
         y_perhead = jax.vmap(
             single_head_attention,
             in_axes=2,

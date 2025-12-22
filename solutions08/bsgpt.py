@@ -48,7 +48,7 @@ def main(
     print("loading byte corpus...")
     with open("../data/sherlock.txt") as file:
         data = str_to_array(file.read())
-    print("  number of training tokens (bytes):", *data.shape)
+    print("  num tokens:", len(data))
     
 
     print("configuring model architecture...")
@@ -61,24 +61,26 @@ def main(
         num_heads=num_heads,
         num_blocks=num_blocks,
     )
-    print("  parameters:", sum(jnp.size(x) for x in jax.tree.leaves(model)))
+    print(
+        "  number of parameters:",
+        sum(l.size for l in jax.tree.leaves(model)),
+    )
 
-
-    print("testing model completion...")
+    # print("testing model completion...")
     prompt = "  Sherlock Holmes and Doctor W"
     original_prompt_tokens = str_to_array(prompt)
     key_completion, key = jax.random.split(key)
-    completion = model.complete(
-        key=key,
-        prompt_tokens=original_prompt_tokens,
-        num_tokens_out=completion_length,
-    )
-    print(vis_example(
-        prompt=prompt,
-        completion=array_to_str(completion),
-        t=0,
-        T=num_steps,
-    ))
+    # completion_tokens = model.complete(
+    #     key=key_completion,
+    #     prompt_tokens=original_prompt_tokens,
+    #     num_tokens_out=completion_length,
+    # )
+    # print(vis_example(
+    #     prompt=prompt,
+    #     completion=array_to_str(completion_tokens),
+    #     t=0,
+    #     T=num_steps,
+    # ))
 
     
     print("initialising optimiser...")
@@ -107,8 +109,8 @@ def main(
         )
         delta, opt_state = opt_state.update(grads)
         model = jax.tree.map(jnp.add, model, delta)
-        
-        # compute some completions
+
+        # show some completions!
         key_completion, key = jax.random.split(key)
         completion_tokens = model.complete(
             key=key_completion,
@@ -121,396 +123,33 @@ def main(
             t=step,
             T=num_steps,
         )
-        # periodically reset
-        if (step - 1) % num_steps_per_reset == 0:
-            prompt_tokens = original_prompt_tokens
-        else:
-            prompt_tokens = jnp.concatenate(
-                [prompt_tokens, completion_tokens],
-            )
-        # print
         if step % num_steps_per_reset == 0:
             tqdm.tqdm.write(str(plot))
         else:
-            tqdm.tqdm.write(f"\x1b[{plot.height}A{plot}")
+            tqdm.tqdm.write(f"{-plot}{plot}")
+        if step % num_steps_per_reset == num_steps_per_reset - 1:
+            prompt_tokens = original_prompt_tokens
+        else:
+            prompt_tokens = jnp.concatenate((
+                prompt_tokens,
+                completion_tokens,
+            ))
  
  
 # # # 
+# Helper functions
+
+
+def str_to_array(s: str) -> Byte[Array, "len(s)"]:
+    return jnp.array([ord(c) for c in s], dtype=jnp.uint8)
+
+
+def array_to_str(a: Byte[Array, "len(s)"]) -> str:
+    return "".join(chr(i) for i in a)
+
+
+# # # 
 # Architecture
-
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class LinearTransform:
-    weights: Float[Array, "num_inputs num_outputs"]
-    
-    @staticmethod
-    @functools.partial(jax.jit, static_argnames=["num_inputs", "num_outputs"])
-    def init(
-        key: PRNGKeyArray,
-        num_inputs: int,
-        num_outputs: int,
-    ) -> Self:
-        bound = jax.lax.rsqrt(jnp.float32(num_inputs))
-        weights = jax.random.uniform(
-            key=key,
-            shape=(num_inputs, num_outputs),
-            minval=-bound,
-            maxval=+bound,
-        )
-        return LinearTransform(weights=weights)
-
-    @jax.jit
-    def forward(
-        self: Self,
-        x: Float[Array, "num_inputs"],
-    ) -> Float[Array, "num_outputs"]:
-        return x @ self.weights
-
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class AffineTransform:
-    weights: Float[Array, "num_inputs num_outputs"]
-    biases: Float[Array, "num_outputs"]
-
-    @staticmethod
-    @functools.partial(jax.jit, static_argnames=["num_inputs", "num_outputs"])
-    def init(
-        key: PRNGKeyArray,
-        num_inputs: int,
-        num_outputs: int,
-    ) -> Self:
-        bound = jax.lax.rsqrt(jnp.float32(num_inputs))
-        weights=jax.random.uniform(
-            key=key,
-            shape=(num_inputs, num_outputs),
-            minval=-bound,
-            maxval=+bound,
-        )
-        biases=jnp.zeros(num_outputs)
-        return AffineTransform(weights=weights, biases=biases)
-
-    @jax.jit
-    def forward(
-        self: Self,
-        x: Float[Array, "num_inputs"],
-    ) -> Float[Array, "num_outputs"]:
-        return x @ self.weights + self.biases
-
-
-@functools.partial(
-    jax.tree_util.register_dataclass,
-    meta_fields=("num_heads",),
-    data_fields=("QKV", "output_transform"),
-)
-@dataclasses.dataclass
-class MultiHeadedCausalSelfAttention:
-    QKV: LinearTransform # LinearTransform[3]
-    output_transform: LinearTransform
-    num_heads: int
-
-    @staticmethod
-    @functools.partial(jax.jit, static_argnames=["embed_size", "num_heads"])
-    def init(
-        key: PRNGKeyArray,
-        embed_size: int,
-        num_heads: int,
-    ) -> Self:
-        key_qkv, key = jax.random.split(key)
-        QKV = jax.vmap(
-            LinearTransform.init,
-            in_axes=(0,None,None),
-        )(
-            jax.random.split(key_qkv, 3),
-            embed_size,
-            embed_size,
-        )
-        key_out, key = jax.random.split(key)
-        output_transform = LinearTransform.init(
-            key_out,
-            embed_size,
-            embed_size,
-        )
-        return MultiHeadedCausalSelfAttention(
-            QKV=QKV,
-            output_transform=output_transform,
-            num_heads=num_heads,
-        )
-
-    @jax.jit
-    def forward(
-        self: Self,
-        x: Float[Array, "t embed_size"],
-    ) -> Float[Array, "t embed_size"]:
-        # perform query, key, value transformations (on all heads at once)
-        qkv = jax.vmap(
-            type(self.QKV).forward, # two-argument version of self.QKV.forward
-            in_axes=(0, None),
-        )(self.QKV, x)
-
-        # reshape the embed dimension into separate heads
-        qkv_perhead = einops.rearrange(
-            qkv,
-            'qkv t (num_heads head_size) -> qkv t num_heads head_size',
-            num_heads=self.num_heads,
-        )
-
-        # vmap the attention computation across each head
-        def single_head_attention(
-            qkv: Float[Array, "3 t head_size"],
-        ) -> Float[Array, "t head_size"]:
-            q, k, v = qkv
-            t, head_size = q.shape
-            # compute raw affinities                tq c @ c tk -> tq tk
-            a = (q @ k.T)                                   
-            # scale                                 tq tk / . . -> tq tk
-            a = a * jax.lax.rsqrt(jnp.float32(head_size))
-            # apply causal mask                     tq tk + t t -> tq tk
-            a = jnp.where(
-                jnp.tril(jnp.ones((t, t), dtype=bool)), # lower triangular mask
-                a,
-                -jnp.inf,
-            )
-            # convert affinities to mixing weights  tq tk -> tq prob(tk)
-            p = jax.nn.softmax(a, axis=-1)
-            # mix values for each key               tq prob(tk) @ tv c -> t c
-            y = p @ v
-            return y
-        y_perhead = jax.vmap(
-            single_head_attention,
-            in_axes=2,  # qkv t vmap(num_heads) head_size
-            out_axes=1, #     t vmap(num_heads) head_size
-        )(qkv_perhead)
-        
-        # recombine heads into new embedding dimension
-        y = einops.rearrange(
-            y_perhead,
-            't num_heads head_size -> t (num_heads head_size)',
-        )
-
-        # for each token, project back into residual stream
-        y_ = jax.vmap(self.output_transform.forward)(y)
-        
-        return y_
-    
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class MLP:
-    layer1: AffineTransform
-    layer2: AffineTransform
-
-    @staticmethod
-    @functools.partial(
-        jax.jit,
-        static_argnames=["num_inputs", "num_hidden", "num_outputs"],
-    )
-    def init(
-        key: PRNGKeyArray,
-        num_inputs: int,
-        num_hidden: int,
-        num_outputs: int,
-    ) -> Self:
-        k1, k2 = jax.random.split(key)
-        layer1 = AffineTransform.init(k1, num_inputs, num_hidden)
-        layer2 = AffineTransform.init(k2, num_hidden, num_outputs)
-        return MLP(layer1=layer1, layer2=layer2)
-
-    @jax.jit
-    def forward(
-        self: Self,
-        x: Float[Array, "num_inputs"],
-    ) -> Float[Array, "num_outputs"]:
-        x = self.layer1.forward(x)
-        x = jax.nn.relu(x)
-        x = self.layer2.forward(x)
-        return x
-
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class LayerNorm:
-    loc: Float[Array, "size"]
-    scale: Float[Array, "size"]
-    
-    @staticmethod
-    @functools.partial(jax.jit, static_argnames=["size"])
-    def init(
-        key: PRNGKeyArray,
-        size: int,
-    ) -> Self:
-        return LayerNorm(
-            loc=jnp.zeros(size),
-            scale=jnp.ones(size),
-        )
-
-    @jax.jit
-    def forward(
-        self: Self,
-        x: Float[Array, "size"],
-    ) -> Float[Array, "size"]:
-        x_mean = jnp.mean(x)
-        x_rstd = jax.lax.rsqrt(jnp.var(x) + 1e-5)
-        x_norm = (x - x_mean) * x_rstd
-        return x_norm * self.scale + self.loc
-
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class DecodeTransformerBlock:
-    layernorm1: LayerNorm
-    attention: MultiHeadedCausalSelfAttention
-    layernorm2: LayerNorm
-    compute: MLP
-
-    @staticmethod
-    @functools.partial(
-        jax.jit,
-        static_argnames=["embed_size", "num_heads", "mlp_size"],
-    )
-    def init(
-        key: PRNGKeyArray,
-        embed_size: int,
-        num_heads: int,
-        mlp_size: int,
-    ) -> Self:
-        k1, k2, k3, k4 = jax.random.split(key, 4)
-        layernorm1 = LayerNorm.init(key=k1, size=embed_size)
-        attention = MultiHeadedCausalSelfAttention.init(
-            key=k2,
-            embed_size=embed_size,
-            num_heads=num_heads,
-        )
-        layernorm2 = LayerNorm.init(key=k3, size=embed_size)
-        compute = MLP.init(
-            key=k4,
-            num_inputs=embed_size,
-            num_hidden=mlp_size,
-            num_outputs=embed_size,
-        )
-        return DecodeTransformerBlock(
-            layernorm1=layernorm1,
-            attention=attention,
-            layernorm2=layernorm2,
-            compute=compute,
-        )
-
-    @jax.jit
-    def forward(
-        self: Self,
-        x: Float[Array, "t embed_size"],
-    ) -> Float[Array, "t embed_size"]:
-        # pre layer norm (per-token)
-        x_norm = jax.vmap(self.layernorm1.forward)(x)
-        # attention (between tokens, residual)
-        x = x + self.attention.forward(x_norm)
-        # pre layer norm (per-token)
-        x_norm = jax.vmap(self.layernorm2.forward)(x)
-        # compute (per-token, residual)
-        x = x + jax.vmap(self.compute.forward)(x_norm)
-        return x
-
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class DecodeTransformer:
-    token_embedding: LinearTransform
-    postn_embedding: LinearTransform
-    blocks: DecodeTransformerBlock # DecodeTransformerBlock[num_blocks]
-    unembedding_layernorm: LayerNorm
-    unembedding: AffineTransform
-
-    @staticmethod
-    @functools.partial(
-        jax.jit,
-        static_argnames=[
-            "num_inputs",
-            "max_context_length",
-            "num_blocks",
-            "num_heads",
-            "embed_size",
-            "mlp_size",
-            "num_outputs",
-        ],
-    )
-    def init(
-        key: PRNGKeyArray,
-        num_inputs: int,
-        max_context_length: int,
-        num_blocks: int,
-        num_heads: int,
-        embed_size: int,
-        mlp_size: int,
-        num_outputs: int,
-    ) -> Self:
-        k1, k2, k3, k4, k5 = jax.random.split(key, 5)
-        # embeddings
-        token_embedding = LinearTransform.init(
-            k1,
-            num_inputs,
-            embed_size,
-        )
-        postn_embedding = LinearTransform.init(
-            k2,
-            max_context_length,
-            embed_size,
-        )
-        
-        # transformer blocks
-        blocks = jax.vmap(
-            DecodeTransformerBlock.init,
-            in_axes=(0,None,None,None),
-        )(
-            jax.random.split(k3, num_blocks),
-            embed_size,
-            num_heads,
-            mlp_size,
-        )
-
-        # unembedding
-        unembedding_layernorm = LayerNorm.init(
-            k4,
-            embed_size,
-        )
-        unembedding = AffineTransform.init(
-            k5,
-            embed_size,
-            num_outputs,
-        )
-        return DecodeTransformer(
-            token_embedding=token_embedding,
-            postn_embedding=postn_embedding,
-            blocks=blocks,
-            unembedding_layernorm=unembedding_layernorm,
-            unembedding=unembedding,
-        )
-
-    @property
-    def max_context_length(self: Self) -> int:
-        return self.postn_embedding.weights.shape[0]
-
-    @jax.jit
-    def forward(
-        self: Self,
-        ts: Float[Array, "t num_inputs"],
-    ) -> Float[Array, "t num_outputs"]:
-        context_length, _num_inputs = ts.shape
-
-        # embedding: semantic and positional token embeddings
-        x_semantic = jax.vmap(self.token_embedding.forward)(ts)
-        x_position = self.postn_embedding.weights[:context_length, :]
-        x = x_semantic + x_position                         # -> t embed_size
-        # apply the num_blocks attention blocks in sequence
-        x, _ = jax.lax.scan(
-            lambda x, block: (block.forward(x), None),
-            x,
-            self.blocks,
-        )                                                   # -> t embed_size
-        # unembedding: transform back to predicted next token probs
-        x_norm = jax.vmap(self.unembedding_layernorm.forward)(x)
-        x = jax.vmap(self.unembedding.forward)(x_norm)      # -> t num_outputs
-        return x
 
 
 @jax.tree_util.register_dataclass
@@ -518,40 +157,8 @@ class DecodeTransformer:
 class ByteSequenceModel:
     decode_transformer: DecodeTransformer
 
-    @staticmethod
-    @functools.partial(
-        jax.jit,
-        static_argnames=(
-            "max_context_length",
-            "embed_size",
-            "mlp_size",
-            "num_heads",
-            "num_blocks",
-        ),
-    )
-    def init(
-        key: PRNGKeyArray, 
-        max_context_length: int,
-        embed_size: int,
-        mlp_size: int,
-        num_heads: int,
-        num_blocks: int,
-    ):
-        return ByteSequenceModel(
-            decode_transformer=DecodeTransformer.init(
-                key=key,
-                num_inputs=128,
-                num_outputs=128,
-                max_context_length=max_context_length,
-                embed_size=embed_size,
-                mlp_size=mlp_size,
-                num_heads=num_heads,
-                num_blocks=num_blocks,
-            ),
-        )
-
     @property
-    def max_context_length(self: Self) -> int:
+    def max_context_length(self) -> int:
         return self.decode_transformer.max_context_length
 
     @jax.jit
@@ -567,78 +174,481 @@ class ByteSequenceModel:
     @jax.jit
     def batch_forward(
         self: Self,
-        byte_arrays: Byte[Array, "batch t"],
-    ) -> Float[Array, "batch t 128"]:
+        byte_arrays: Byte[Array, "batch_size t"],
+    ) -> Float[Array, "batch_size t 128"]:
         return jax.vmap(self.forward)(byte_arrays)
 
-    # TODO: JIT, dynamic slice
+    @functools.partial(
+        jax.jit,
+        static_argnames=["num_tokens_out"],
+    )
     def complete(
         self: Self,
         key: PRNGKeyArray,
-        prompt_tokens: Byte[Array, "num_tokens_in"],
+        prompt_tokens: Byte[Array, "t"],
         num_tokens_out: int,
         inverse_temperature: float = 1.,
     ) -> Byte[Array, "num_tokens_out"]:
         num_tokens_in, = prompt_tokens.shape
-        # set up buffer we will slide across
-        buffer = jnp.concatenate((
+        
+        # initialise buffer
+        padding = max(num_tokens_out, self.max_context_length-num_tokens_in)
+        buffer = jnp.concatenate([
             prompt_tokens,
-            jnp.zeros(num_tokens_out, dtype=jnp.uint8),
-        ))
-        lprompt = len(prompt_tokens)
-        # loop across buffer
-        keys_next_token = jax.random.split(key, num_tokens_out)
-        for i, k in zip(range(num_tokens_out), keys_next_token):
-            # slice window
-            lo = max(0, lprompt+i-self.max_context_length)
-            window = buffer[lo:lprompt+i]
+            jnp.zeros(padding, dtype=jnp.uint8),
+        ])
+        
+        # # loop across the buffer
+        # for i in range(num_tokens_out):
+        #     # slice
+        #     lo = max(0, num_tokens_in + i - self.max_context_length)
+        #     hi = num_tokens_in + i
+        #     window = buffer[lo:hi]
+        #     # predict next token
+        #     probs_next_token = self.forward(window)[-1]
+        #     key_generate, key = jax.random.split(key)
+        #     next_token = jax.random.choice(
+        #         key=key_generate,
+        #         a=128,
+        #         p=probs_next_token ** inverse_temperature,
+        #         shape=(),
+        #     ).astype(dtype=jnp.uint8)
+        #     # add token to buffer
+        #     buffer = buffer.at[num_tokens_in+i].set(next_token)
+        
+        def step(i: int, carry):
+            buffer, key = carry
+            # slice
+            lo = jnp.maximum(0, num_tokens_in + i - self.max_context_length)
+            length = self.max_context_length
+            window = jax.lax.dynamic_slice(
+                operand=buffer,
+                start_indices=(lo,),
+                slice_sizes=(length,),
+            )
+            cursor = num_tokens_in + i - lo - 1
+            # jax.debug.print("{} {} {}", i, window, cursor)
             # predict next token
-            prob_next_token = self.forward(window)[-1]
+            probs_next_token = self.forward(window)[cursor]
+            key_generate, key = jax.random.split(key)
             next_token = jax.random.choice(
-                key=k,
+                key=key_generate,
                 a=128,
-                p=prob_next_token ** inverse_temperature,
+                p=probs_next_token ** inverse_temperature,
                 shape=(),
             ).astype(dtype=jnp.uint8)
             # add token to buffer
-            buffer = buffer.at[lprompt+i].set(next_token)
+            buffer = buffer.at[num_tokens_in+i].set(next_token)
+            return (buffer, key)
+        buffer, key = jax.lax.fori_loop(
+            lower=0,
+            upper=num_tokens_out,
+            body_fun=step,
+            init_val=(buffer, key),
+        )
+
         # return completion
-        tokens_out = buffer[-num_tokens_out:]
+        tokens_out = buffer[num_tokens_in:num_tokens_in+num_tokens_out]
         return tokens_out
 
 
-# # # 
-# Helper functions
+    @staticmethod
+    @functools.partial(
+        jax.jit,
+        static_argnames=[
+            "max_context_length",
+            "embed_size",
+            "mlp_size",
+            "num_heads",
+            "num_blocks",
+        ],
+    )
+    def init(
+        key: PRNGKeyArray,
+        max_context_length: int,
+        embed_size: int,
+        mlp_size: int,
+        num_heads: int,
+        num_blocks: int,
+    ) -> Self:
+        return ByteSequenceModel(
+            decode_transformer=DecodeTransformer.init(
+                key=key,
+                num_inputs=128,
+                num_outputs=128,
+                max_context_length=max_context_length,
+                embed_size=embed_size,
+                mlp_size=mlp_size,
+                num_heads=num_heads,
+                num_blocks=num_blocks,
+            ),
+        )
 
 
-def str_to_array(s: str) -> Byte[Array, "len(s)"]:
-    return jnp.array([ord(c) for c in s], dtype=jnp.uint8)
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class DecodeTransformer:
+    token_embedding: LinearTransform
+    postn_embedding: LinearTransform
+    blocks: DecodeTransformerBlock # [num_blocks]
+    unembedding_layernorm: LayerNorm
+    unembedding: AffineTransform
+
+    @property
+    def max_context_length(self) -> int:
+        return self.postn_embedding.num_inputs
+
+    def forward(
+        self: Self,
+        ts: Float[Array, "t num_inputs"],
+    ) -> Float[Array, "t num_outputs"]:
+        context_length, _num_inputs = ts.shape
+
+        # embedding
+        x_semantic = jax.vmap(self.token_embedding.forward)(ts)
+        x_position = self.postn_embedding.weights[:context_length, :]
+        x = x_semantic + x_position # t embed_size
+
+        # apply the blocks
+        x, _ = jax.lax.scan(
+            lambda x, block: (block.forward(x), None),
+            x,
+            self.blocks,
+        )
+
+        # unembedding
+        x_norm = jax.vmap(self.unembedding_layernorm.forward)(x)
+        logits = jax.vmap(self.unembedding.forward)(x_norm)
+        return logits
+
+    @staticmethod
+    def init(
+        key: PRNGKeyArray,
+        num_inputs: int,
+        num_outputs: int,
+        max_context_length: int,
+        embed_size: int,
+        mlp_size: int,
+        num_heads: int,
+        num_blocks: int,
+    ) -> Self:
+        k1, k2, k3, k4, k5 = jax.random.split(key, 5)
+        return DecodeTransformer(
+            token_embedding=LinearTransform.init(
+                key=k1,
+                num_inputs=num_inputs,
+                num_outputs=embed_size,
+            ),
+            postn_embedding=LinearTransform.init(
+                key=k2,
+                num_inputs=max_context_length,
+                num_outputs=embed_size,
+            ),
+            blocks=jax.vmap(
+                DecodeTransformerBlock.init,
+                in_axes=(0,None,None,None),
+            )(
+                jax.random.split(k3, num_blocks),
+                embed_size,
+                num_heads,
+                mlp_size,
+            ),
+            unembedding_layernorm=LayerNorm.init(
+                key=k4,
+                size=embed_size,
+            ),
+            unembedding=AffineTransform.init(
+                key=k5,
+                num_inputs=embed_size,
+                num_outputs=num_outputs,
+            ),
+        )
 
 
-def array_to_str(a: Byte[Array, "len(s)"]) -> str:
-    return "".join(chr(i) for i in a)
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class AffineTransform:
+    weights: Float[Array, "n_in n_out"]
+    biases: Float[Array, "n_out"]
 
+    @staticmethod
+    def init(key: PRNGKeyArray, num_inputs: int, num_outputs: int) -> Self:
+        bound = jax.lax.rsqrt(jnp.float32(num_inputs))
+        return AffineTransform(
+            weights=jax.random.uniform(
+                key=key,
+                shape=(num_inputs, num_outputs),
+                minval=-bound,
+                maxval=+bound,
+            ),
+            biases=jnp.zeros(num_outputs),
+        )
+
+    def forward(
+        w: Self,
+        x: Float[Array, "n_in"],
+    ) -> Float[Array, "n_out"]:
+        return x @ w.weights + w.biases
+
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class LinearTransform:
+    weights: Float[Array, "n_in n_out"]
+
+    @property
+    def num_inputs(self) -> int:
+        return self.weights.shape[0]
+
+    @staticmethod
+    def init(key: PRNGKeyArray, num_inputs: int, num_outputs: int) -> Self:
+        bound = jax.lax.rsqrt(jnp.float32(num_inputs))
+        return LinearTransform(
+            weights=jax.random.uniform(
+                key=key,
+                shape=(num_inputs, num_outputs),
+                minval=-bound,
+                maxval=+bound,
+            ),
+        )
+
+    def forward(
+        w: Self,
+        x: Float[Array, "n_in"],
+    ) -> Float[Array, "n_out"]:
+        return x @ w.weights
+
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class LayerNorm:
+    loc: Float[Array, "size"]
+    scale: Float[Array, "size"]
+
+    def forward(
+        self: Self,
+        x: Float[Array, "size"],
+    ) -> Float[Array, "size"]:
+        x_mean = jnp.mean(x)
+        x_rstd = jax.lax.rsqrt(jnp.var(x) + 1e-5)
+        x_norm = (x - x_mean) * x_rstd
+        return x_norm * self.scale + self.loc
+
+    @staticmethod
+    def init(
+        key: PRNGKeyArray,
+        size: int,
+    ) -> Self:
+        return LayerNorm(
+            loc=jnp.zeros(size),
+            scale=jnp.ones(size),
+        )
+
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class DecodeTransformerBlock:
+    layernorm1: LayerNorm
+    attention: MultiHeadedCausalSelfAttention
+    layernorm2: LayerNorm
+    compute: MLP
+
+    def forward(
+        self: Self,
+        x: Float[Array, "t embed_size"],
+    ) -> Float[Array, "t embed_size"]:
+        # residual attention
+        x_norm = jax.vmap(self.layernorm1.forward)(x)
+        x = x + self.attention.forward(x_norm)
+        # residual MLP
+        x_norm = jax.vmap(self.layernorm2.forward)(x)
+        x = x + jax.vmap(self.compute.forward)(x_norm)
+        return x
+
+    @staticmethod
+    def init(
+        key: PRNGKeyArray,
+        embed_size: int,
+        num_heads: int,
+        mlp_size: int,
+    ) -> Self:
+        k1, k2, k3, k4 = jax.random.split(key, 4)
+        return DecodeTransformerBlock(
+            layernorm1=LayerNorm.init(
+                key=k1,
+                size=embed_size,
+            ),
+            attention=MultiHeadedCausalSelfAttention.init(
+                key=k2,
+                embed_size=embed_size,
+                num_heads=num_heads,
+            ),
+            layernorm2=LayerNorm.init(
+                key=k3,
+                size=embed_size,
+            ),
+            compute=MLP.init(
+                key=k4,
+                num_inputs=embed_size,
+                num_hidden=mlp_size,
+                num_outputs=embed_size,
+            ),
+        )
+        
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class MLP:
+    layer1: AffineTransform # num_inputs -> num_hidden
+    layer2: AffineTransform # num_hidden -> num_outputs
+
+    def forward(
+        self: Self,
+        x: Float[Array, "num_inputs"],
+    ) -> Float[Array, "num_outputs"]:
+        x = self.layer1.forward(x)
+        x = jax.nn.relu(x)
+        x = self.layer2.forward(x)
+        return x
+
+    @staticmethod
+    def init(
+        key: PRNGKeyArray,
+        num_inputs: int,
+        num_hidden: int,
+        num_outputs: int,
+    ) -> Self:
+        k1, k2 = jax.random.split(key)
+        return MLP(
+            layer1=AffineTransform.init(
+                key=k1,
+                num_inputs=num_inputs,
+                num_outputs=num_hidden,
+            ),
+            layer2=AffineTransform.init(
+                key=k2,
+                num_inputs=num_hidden,
+                num_outputs=num_outputs,
+            ),
+        )
+
+
+@functools.partial(
+    jax.tree_util.register_dataclass,
+    meta_fields=["num_heads"],
+    data_fields=["QKV", "output_transform"],
+)
+@dataclasses.dataclass
+class MultiHeadedCausalSelfAttention:
+    QKV: LinearTransform # LinearTransform[3]
+    output_transform: LinearTransform
+    num_heads: int
+
+    def forward(
+        self: Self,
+        x: Float[Array, "t embed_size"],
+    ) -> Float[Array, "t embed_size"]:
+        # perform query key and value transform
+        forward = type(self.QKV).forward    # ., c -> c
+        vforward = jax.vmap(
+            forward,
+            in_axes=(None, 0),
+        )                                   # ., t c -> t c
+        vvforward = jax.vmap(
+            vforward,
+            in_axes=(0, None),
+        )                                   # qkv, t c -> qkv t c
+        qkv = vvforward(self.QKV, x)
+
+        # reshaping the embed dimension into separate heads
+        qkv_perhead = einops.rearrange(
+            qkv,
+            'qkv t (num_heads head_size) -> qkv t num_heads head_size',
+            num_heads=self.num_heads,
+        )
+
+        # vmap the attention computation across heads
+        def single_head_attention(
+            qkv: Float[Array, "3 t head_size"],
+        ) -> Float[Array, "t head_size"]:
+            q, k, v = qkv
+            t, head_size = q.shape
+            # compute raw affinities    tq c @ c tk -> tq tk
+            a = (q @ k.T)
+            # scale                     tq tk / . . -> tq tk
+            a = a * jax.lax.rsqrt(jnp.float32(head_size))
+            # causal mask
+            a = jnp.where(
+                jnp.tril(jnp.ones((t, t), dtype=bool)),
+                a,
+                -jnp.inf,
+            )
+            # converting affinities to mixing weights
+            #                           tq tk -> tq prob(tk)
+            p = jax.nn.softmax(a, axis=-1)
+            # mix values for each key   tq prob(tk) @ tv c -> t c
+            y = p @ v
+            return y
+        y_perhead = jax.vmap(
+            single_head_attention,
+            in_axes=2,
+            out_axes=1,
+        )(qkv_perhead) # -> t num_heads head_size
+
+        # recombine heads into a new embed_size
+        y = einops.rearrange(
+            y_perhead,
+            't num_heads head_size -> t (num_heads head_size)',
+        )
+
+        # output transform
+        y_projected = jax.vmap(self.output_transform.forward)(y)
+
+        return y_projected
+
+    @staticmethod
+    def init(
+        key: PRNGKeyArray,
+        embed_size: int,
+        num_heads: int,
+    ) -> Self:
+        k1, k2 = jax.random.split(key)
+        return MultiHeadedCausalSelfAttention(
+            QKV=jax.vmap(
+                LinearTransform.init,
+                in_axes=(0,None,None),
+            )(
+                jax.random.split(k1, 3),
+                embed_size,
+                embed_size,
+            ),
+            output_transform=LinearTransform.init(
+                key=k2,
+                num_inputs=embed_size,
+                num_outputs=embed_size,
+            ),
+            num_heads=num_heads,
+        )
+    
 
 # # # 
 # Cross entropy functions
 
 
-@jax.jit
-def cross_entropy_dirac(
+def cross_entropy(
     true_index: Int[Array, ""],
     pred_distr: Float[Array, "v"],
 ) -> float:
     return -jnp.log(pred_distr[true_index])
 
 
-@jax.jit
 def loss_fn(
     model: ByteSequenceModel,
     tokens: Byte[Array, "b t+1"],
 ) -> float:
     true_indices = tokens[:,1:]                         # int[b,t]
     pred_distrs = model.batch_forward(tokens[:,:-1])    # float[b,t,v]
-    cross_entropies = jax.vmap(jax.vmap(cross_entropy_dirac))(
+    cross_entropies = jax.vmap(jax.vmap(cross_entropy))(
         true_indices,
         pred_distrs,
     )
