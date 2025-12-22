@@ -11,7 +11,7 @@ Learning objectives:
   * jax.lax.cond and jax.lax.select primitives
   * jax.numpy.where
   * indexing
-  * boolean multiplication
+  * boolean multiplication (we did not discuss this in the lecture)
 """
 
 import dataclasses
@@ -47,10 +47,10 @@ def main(
 
 
 def save_animation(
-    statess: Environment, # Environment[batch time]
+    state_bt: Environment, # Environment[batch time]
     filename="output.gif",
 ):
-    imgss = jax.vmap(jax.vmap(Environment.render))(statess)
+    imgss = jax.vmap(jax.vmap(Environment.render))(state_bt)
     imgss = jnp.pad(
         imgss,
         pad_width=(
