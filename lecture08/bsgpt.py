@@ -14,17 +14,17 @@ Learning objectives:
 
 import dataclasses
 import functools
-import jax
-import jax.numpy as jnp
-import einops
-import textwrap
 import tyro
 import tqdm
-import numpy as np
 import matthewplotlib as mp
 
 from typing import Self
 from jaxtyping import Array, Float, Int, UInt8 as Byte, PRNGKeyArray, PyTree
+
+import numpy as np
+import jax
+import jax.numpy as jnp
+import einops
 
 
 def main(
@@ -39,14 +39,14 @@ def main(
     learning_rate: float = 0.0001,
     batch_size: int = 32,
     num_steps: int = 2048,
-    num_steps_per_vis: int = 16,
+    num_steps_per_reset: int = 32,
     seed: int = 221,
 ):
     key = jax.random.key(seed=seed)
 
     
     print("loading byte corpus...")
-    with open("sherlock.txt") as file:
+    with open("../data/sherlock.txt") as file:
         data = str_to_array(file.read())
     print("  number of training tokens (bytes):", *data.shape)
     
@@ -61,22 +61,21 @@ def main(
         num_heads=num_heads,
         num_blocks=num_blocks,
     )
-    print("parameters:", sum(jnp.size(x) for x in jax.tree.leaves(model)))
+    print("  parameters:", sum(jnp.size(x) for x in jax.tree.leaves(model)))
 
 
     print("testing model completion...")
     prompt = "  Sherlock Holmes and Doctor W"
-    prompt_tokens = str_to_array(prompt)
+    original_prompt_tokens = str_to_array(prompt)
     key_completion, key = jax.random.split(key)
     completion = model.complete(
         key=key,
-        prompt_tokens=prompt_tokens,
+        prompt_tokens=original_prompt_tokens,
         num_tokens_out=completion_length,
     )
     print(vis_example(
         prompt=prompt,
         completion=array_to_str(completion),
-        uncover=1.0,
         t=0,
         T=num_steps,
     ))
@@ -90,7 +89,7 @@ def main(
 
 
     print("training loop...")
-    plots = []
+    prompt_tokens = original_prompt_tokens
     for step in tqdm.trange(num_steps):
         # sample a batch of sequences
         key_batch, key = jax.random.split(key)
@@ -101,44 +100,39 @@ def main(
         ) + jnp.arange(max_context_length+1)
         data_batch = data[batch_ids]
         
-        # compute the batch loss and grad
+        # compute loss, grad, update
         train_loss, grads = jax.value_and_grad(loss_fn)(
             model,
             data_batch,
         )
-        # compute update, update optimiser, update model
         delta, opt_state = opt_state.update(grads)
         model = jax.tree.map(jnp.add, model, delta)
         
-        # periodically compute example
-        i = step % num_steps_per_vis
-        if i == 0:
-            key_completion, key = jax.random.split(key)
-            completion = model.complete(
-                key=key_completion,
-                prompt_tokens=prompt_tokens,
-                num_tokens_out=completion_length,
-            )
+        # compute some completions
+        key_completion, key = jax.random.split(key)
+        completion_tokens = model.complete(
+            key=key_completion,
+            prompt_tokens=prompt_tokens,
+            num_tokens_out=completion_length // num_steps_per_reset,
+        )
         plot = vis_example(
-            prompt=prompt,
-            completion=array_to_str(completion),
-            uncover=i / (num_steps_per_vis - 1),
-            t=step // num_steps_per_vis * num_steps_per_vis,
+            prompt=array_to_str(prompt_tokens),
+            completion=array_to_str(completion_tokens),
+            t=step,
             T=num_steps,
         )
-        if step == 0:
+        # periodically reset
+        if (step - 1) % num_steps_per_reset == 0:
+            prompt_tokens = original_prompt_tokens
+        else:
+            prompt_tokens = jnp.concatenate(
+                [prompt_tokens, completion_tokens],
+            )
+        # print
+        if step % num_steps_per_reset == 0:
             tqdm.tqdm.write(str(plot))
         else:
             tqdm.tqdm.write(f"\x1b[{plot.height}A{plot}")
-        plots.append(plot)
-
-    mp.save_animation(
-        plots,
-        "../gallery/lecture08.gif",
-        bgcolor="black",
-        fps=25,
-    )
-
  
  
 # # # 
@@ -626,6 +620,32 @@ def array_to_str(a: Byte[Array, "len(s)"]) -> str:
 
 
 # # # 
+# Cross entropy functions
+
+
+@jax.jit
+def cross_entropy_dirac(
+    true_index: Int[Array, ""],
+    pred_distr: Float[Array, "v"],
+) -> float:
+    return -jnp.log(pred_distr[true_index])
+
+
+@jax.jit
+def loss_fn(
+    model: ByteSequenceModel,
+    tokens: Byte[Array, "b t+1"],
+) -> float:
+    true_indices = tokens[:,1:]                         # int[b,t]
+    pred_distrs = model.batch_forward(tokens[:,:-1])    # float[b,t,v]
+    cross_entropies = jax.vmap(jax.vmap(cross_entropy_dirac))(
+        true_indices,
+        pred_distrs,
+    )
+    return jnp.mean(cross_entropies)
+
+
+# # # 
 # Optimiser
 
 
@@ -701,81 +721,36 @@ class Adam:
 
 
 # # # 
-# Cross entropy functions
-
-
-@jax.jit
-def cross_entropy_dirac(
-    true_index: Int[Array, ""],
-    pred_distr: Float[Array, "v"],
-) -> float:
-    return -jnp.log(pred_distr[true_index])
-
-
-@jax.jit
-def batch_cross_entropy_dirac(
-    true_indexs: Int[Array, "..."],
-    pred_distrs: Float[Array, "... v"],
-) -> Float[Array, "..."]:
-    batched = jnp.vectorize(cross_entropy_dirac, signature='(),(v)->()')
-    return batched(true_indexs, pred_distrs)
-    
-
-# # # 
-# Loss function
-
-
-@jax.jit
-def loss_fn(
-    model: ByteSequenceModel,
-    tokens: Byte[Array, "b t+1"],
-) -> float:
-    return batch_cross_entropy_dirac(
-        true_indexs=tokens[:,1:],
-        pred_distrs=model.batch_forward(tokens[:,:-1]),
-    ).mean()
-
-
-# # # 
 # Visualisation
+
+
+def wrap(text: str, max_width: int, max_lines: int) -> str:
+    num_lines = min(len(text) // max_width + 1, max_lines)
+    lines = [
+        text[i:i+max_width]
+        for i in range(0, num_lines*max_width, max_width)
+    ]
+    return "\n".join(lines)
 
 
 def vis_example(
     prompt: str,
     completion: str,
-    uncover: float,
     t: int,
     T: int,
 ) -> mp.plot:
-    # proportionally truncate completion
-    truncated_completion = completion[:int(len(completion) * uncover)]
-
     # strip quotes
-    render_prompt = repr(prompt)[1:-1]
-    render_completion = repr(truncated_completion)[1:-1]
-
-    wrapper = textwrap.TextWrapper(
-        width=29,
-        replace_whitespace=False,
-        drop_whitespace=False,
-        max_lines=13,
-        placeholder="...",
-    )
 
     # prompt
-    plot_prompt = mp.text(
-        '\n'.join(wrapper.wrap(render_prompt)),
-        fgcolor="cyan",
-    )
+    render_prompt = repr(prompt)[1:-1]
+    wrapped_prompt = wrap(render_prompt, max_width=29, max_lines=13)
+    plot_prompt = mp.text(wrapped_prompt, fgcolor="cyan")
     
     # completion
-    wrapped_completion = '\n'.join(wrapper.wrap(
-        " "*len(render_prompt) + render_completion,
-    ))
-    plot_completion = mp.text(
-        wrapped_completion,
-        fgcolor='magenta',
-    )
+    render_completion = repr(completion)[1:-1]
+    offset_completion = " "*len(render_prompt) + render_completion
+    wrapped_completion = wrap(offset_completion, max_width=29, max_lines=13)
+    plot_completion = mp.text(wrapped_completion, fgcolor='magenta')
 
     return mp.border(
         mp.dstack(
