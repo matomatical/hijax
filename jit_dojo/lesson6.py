@@ -11,7 +11,7 @@ print("1. defining and transforming function...")
 def f(
     n: int,
     a: Int[Array, "m"],
-) -> Int[Array, "n"]:
+) -> Int[Array, "m"]:
     print("   [f.trace] n:", n)
     print("   [f.trace] a:", a)
     jax.debug.print("   [f.debug] n: {}", n)
