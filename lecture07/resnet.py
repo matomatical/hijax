@@ -42,11 +42,6 @@ def main(
     key = jax.random.key(seed)
 
 
-    print("initialising model...")
-    key_model, key = jax.random.split(key)
-    model = DenseResNet.init(key=key_model)
-
-
     print("loading and preprocessing data...")
     with jnp.load('mnist.npz') as datafile:
         x_train = jnp.array(datafile['x_train'])
@@ -55,6 +50,11 @@ def main(
         y_test = jnp.array(datafile['y_test'])
     x_train = 1.275 * x_train / 255 - 0.1
     x_test = 1.275 * x_test / 255 - 0.1
+
+    
+    print("initialising model...")
+    key_model, key = jax.random.split(key)
+    model = DenseResNet.init(key=key_model)
 
 
     print("initialising optimiser...")
@@ -67,10 +67,6 @@ def main(
     
 
     print("begin training...")
-    losses = []
-    accuracies = []
-    plots = []
-    # TODO: scan this loop
     for step in tqdm.trange(num_steps):
         # sample a batch
         key_batch, key = jax.random.split(key)
@@ -84,7 +80,7 @@ def main(
         y_batch = y_train[batch]
 
         # compute the batch loss and grad
-        loss, grads = jax.value_and_grad(batch_cross_entropy)(
+        grads = jax.grad(batch_cross_entropy)(
             model,
             x_batch,
             y_batch,
@@ -93,71 +89,6 @@ def main(
         # compute update, update optimiser, update model
         delta, opt_state = opt_state.update(grads)
         model = jax.tree.map(jnp.add, model, delta)
-
-
-    print("begin dynamics analysis...")
-    
-    # extract activations
-    X = x_test[:1000]
-    Y = y_test[:1000]
-    Y_, Z = model.batch_forward_activations(X)
-
-    # PCA
-    Z_all = einops.rearrange(
-        Z,
-        'batch layers residual -> (batch layers) residual',
-    )
-    pca = pcax.fit(Z_all, n_components=3)
-    xyz = pcax.transform(pca, Z)
-    
-    # prepare to plot
-    xyz_np = np.array(xyz)
-    xyz_std = xyz_np / np.abs(xyz_np).max()
-    
-    # plot evolving representation cloud
-    plot = None
-    plots = []
-    for t in range(500):
-        l = min(t, 200)
-        # sweep camera
-        angle = t / 250 * 4 * np.pi
-        p = np.array([1.5 * np.sin(angle), 1.5, 1.5 * np.cos(angle)])
-
-        # determine points and colours
-        series = xyz_std[:,l,:]
-        c = mp.cyber(Y/10)
-        highlighted_class = (t // 25) % 10
-        c[Y == highlighted_class] = 255
-
-        # plot
-        if plot:
-            print(-plot, end="")
-        plot = mp.border(
-            (mp.text("layers: ") + mp.progress(l/200, width=70))
-            / mp.scatter3(
-                (mp.xaxis(0,.2), "red"),
-                (mp.yaxis(0,.2), "green"),
-                (mp.zaxis(0,.2), "blue"),
-                (series, c),
-                camera_position=p,
-                vertical_fov_degrees=55,
-                height=36,
-                width=78,
-            )
-            / mp.text(f"highlighted class: {highlighted_class}"),
-            title=f"PCA representations by class",
-        )
-        print(plot)
-        plots.append(plot)
-        time.sleep(0.02)
-
-
-    mp.save_animation(
-        plots,
-        "../gallery/lecture07.gif",
-        bgcolor="black",
-        fps=50,
-    )
 
 
 # # # 
@@ -190,103 +121,7 @@ class AffineTransform:
         return x @ w.weights + w.biases
 
 
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class DenseResNet:
-    embedding: AffineTransform
-    layers: list[AffineTransform]
-    unembedding: AffineTransform
-
-    @staticmethod
-    @jax.jit
-    def init(key: PRNGKeyArray) -> Self:
-        k1, k2, k3 = jax.random.split(key, 3)
-        return DenseResNet(
-            embedding=AffineTransform.init(
-                key=k1,
-                num_inputs=784,
-                num_outputs=128,
-            ),
-            # TODO: vmap
-            layers=[
-                AffineTransform.init(
-                    key=k,
-                    num_inputs=128,
-                    num_outputs=128,
-                ) for k in jax.random.split(k2, 200)
-            ],
-            unembedding=AffineTransform.init(
-                key=k3,
-                num_inputs=128,
-                num_outputs=10,
-            ),
-        )
-
-    @jax.jit
-    def forward(
-        self: Self,
-        image: Float[Array, "28 28"],
-    ) -> Float[Array, "10"]:
-        # embed
-        x = jnp.ravel(image)
-        x = self.embedding.forward(x)
-        x = jnp.tanh(x)
-
-        # layers
-        # TODO: Scan
-        for layer in self.layers:
-            r = layer.forward(x)
-            r = jnp.tanh(r)
-            x = x + r
-        
-        # unembed
-        x = self.unembedding.forward(x)
-        probs = jax.nn.softmax(x)
-        return probs
-    
-    @jax.jit
-    def batch_forward(
-        self,
-        images: Float[Array, "batch_size 28 28"],
-    ) -> Float[Array, "batch_size 10"]:
-        return jax.vmap(self.forward)(images)
-    
-    @jax.jit
-    def forward_activations(
-        self: Self,
-        image: Float[Array, "28 28"],
-    ) -> tuple[
-        Float[Array, "10"],
-        Float[Array, "201 128"],
-    ]:
-        # embed
-        x = jnp.ravel(image)
-        x = self.embedding.forward(x)
-        x = jnp.tanh(x)
-
-        # layers
-        # TODO: scan
-        activations = [x]
-        for layer in self.layers:
-            r = layer.forward(x)
-            r = jnp.tanh(r)
-            x = x + r
-            activations.append(x)
-        
-        # unembed
-        x = self.unembedding.forward(x)
-        probs = jax.nn.softmax(x)
-        return probs, jnp.stack(activations)
-
-    @jax.jit
-    def batch_forward_activations(
-        self: Self,
-        images: Float[Array, "batch_size 28 28"],
-    ) -> tuple[
-        Float[Array, "batch_size 10"],
-        Float[Array, "batch_size 201 128"],
-    ]:
-        return jax.vmap(self.forward_activations)(images)
+# TODO: DenseResNet
 
 
 # # # 
@@ -398,17 +233,6 @@ def batch_cross_entropy(
     )
     avg_cross_entropy = all_cross_entropies.mean()
     return avg_cross_entropy
-
-
-@jax.jit
-def batch_accuracy(
-    model: DenseResNet,
-    x_batch: Float[Array, "b h w"],
-    y_batch: Int[Array, "b"],
-) -> float:
-    pred_prob_all_classes = model.batch_forward(x_batch)
-    highest_prob_class = pred_prob_all_classes.argmax(axis=-1)
-    return jnp.mean(y_batch == highest_prob_class)
 
 
 # # # 
