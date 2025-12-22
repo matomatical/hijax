@@ -1,12 +1,13 @@
 """
-Lecture 04: Hi, automatic vectorisation!
+Lecture 05: Hi, stateful optimisation!
 
-Demonstration: Implement and train a CNN on MNIST with minibatch SGD.
+Demonstration: Implement the Adam optimiser in vanilla JAX and manage its
+training state throughout the training loop.
 
 Learning objectives:
 
-* more practice with PyTrees
-* introducing jax.vmap
+* more practice with PyTrees, especially jax.tree.map
+* more practice managing state within a training loop
 """
 
 import functools

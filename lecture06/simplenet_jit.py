@@ -1,12 +1,14 @@
 """
-Lecture 04: Hi, automatic vectorisation!
+Lecture 06: Hi, just-in-time compilation!
 
-Demonstration: Implement and train a CNN on MNIST with minibatch SGD.
+Demonstration: Accelerate our CNN.
 
 Learning objectives:
 
-* more practice with PyTrees
-* introducing jax.vmap
+* introducing basics of jax.jit (jit dojo):
+  * tracing & execution stages
+  * compilation cache keyed by shapes/dtypes
+* applying jit, which functions can/should we decorate?
 """
 
 import functools
