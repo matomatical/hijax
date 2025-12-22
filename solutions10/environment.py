@@ -68,14 +68,23 @@ def generate_maze(
     # include_edges = kruskal_clever(key, nodes, edges)
     include_edges = kruskal_brute(key, nodes, edges)
 
-    # finally, generate the grid array
+    # carve out junctions
     grid = jnp.ones((size, size), dtype=bool)
-    grid = grid.at[1::2,1::2].set(False)        # carve out junctions
-    include_edges_ijs = jnp.rint(jnp.stack((    # carve out edges
-        include_edges // W,
-        include_edges % W,
-    )).mean(axis=-1) * 2 + 1).astype(int)
-    grid = grid.at[tuple(include_edges_ijs)].set(False)
+    grid = grid.at[1::2,1::2].set(False)
+    
+    # carve out edges
+    def edge_pos(edge_ij: Int[Array, "2"]) -> Int[Array, "2"]:
+        divs, mods = jnp.divmod(edge_ij, W)
+        rows = 1 + 2 * divs
+        cols = 1 + 2 * mods
+        row = jnp.sum(rows) // 2
+        col = jnp.sum(cols) // 2
+        return jnp.array((row, col))
+    edge_poss = jax.vmap(edge_pos)(include_edges)
+    grid = grid.at[
+        edge_poss[:,0],
+        edge_poss[:,1],
+    ].set(False)
 
     return grid
 

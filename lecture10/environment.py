@@ -209,24 +209,7 @@ def walk(
 # Maze generator
 
 
-@functools.partial(jax.jit, static_argnames=('size',))
-def generate_maze(
-    key: PRNGKeyArray,
-    size: int, # >= 3, odd
-) -> Bool[Array, "size size"]:
-    """
-    Generate a `size` by `size` binary gridworld with a 1-wall thick border and
-    a random acyclic maze in the centre.
-
-    Consider the 'junction' squares
-        
-        (1,1), (1,3), ..., (1,w-1), (3,1), ..., (size-1,size-1).
-    
-    These squares form the nodes of a grid graph. This function constructs a
-    random spanning tree of this grid graph using Kruskal's algorithm, and
-    returns the corresponding binary matrix.
-    """
-    # TODO
+# TODO
 
 
 # # # 
