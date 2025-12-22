@@ -1,9 +1,15 @@
+# array programming basics
 numpy
 einops
+# jax itself
 jax
-git+https://github.com/matomatical/matthewplotlib.git@v0.3.4
-tyro
+# jax helper libraries
 jaxtyping
-pillow
+jax-tqdm
 pcax
+# helper libraries
+pillow
 tqdm
+tyro
+# matthew's plotting library (alpha)
+git+https://github.com/matomatical/matthewplotlib.git@v0.3.4
