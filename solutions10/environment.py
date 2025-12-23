@@ -29,52 +29,246 @@ import einops
 
 
 # # # 
+# Entry point
+
+
+def main(
+    size: int = 25,
+    seed: int = 42,
+):
+    key = jax.random.key(seed=seed)
+
+    # initialise environment
+    key_init, key = jax.random.split(key)
+    state = Environment.init(
+        key=key_init,
+        size=size,
+    )
+    print(mp.image(state.render()))
+
+    print("doing random walks...")
+    start_time = time.perf_counter()
+    key_walks, key = jax.random.split(key)
+    state_bt = jax.vmap(
+        walk,
+        in_axes=(0, None, None),
+    )(
+        jax.random.split(key_walks, 256),
+        size,
+        512,
+    )
+    state_bt.hero_pos.block_until_ready()
+    state_bt.goal_pos.block_until_ready()
+    state_bt.walls.block_until_ready()
+    end_time = time.perf_counter()
+    print("elapsed time", end_time - start_time, "seconds")
+
+    print("saving...")
+    save_animation(state_bt)
+
+
+# # # 
+# Environment
+
+
+class Action(enum.IntEnum):
+    WAIT = 0
+    UP = 1
+    LEFT = 2
+    DOWN = 3
+    RIGHT = 4
+
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class Environment:
+    hero_pos: Int[Array, "2"]
+    goal_pos: Int[Array, "2"]
+    walls: Bool[Array, "size size"]
+
+    @staticmethod
+    @functools.partial(jax.jit, static_argnames=["size"])
+    def init(
+        key: PRNGKeyArray,
+        size: int,
+    ) -> Self:
+        # generate random wall layout
+        key_walls, key = jax.random.split(key)
+        walls = generate_maze(
+            key=key_walls,
+            size=size,
+        )
+
+        # generate random hero and goal positions
+        key_pos, key = jax.random.split(key)
+        indices = jax.random.choice(
+            key=key_pos,
+            a=(size//2)**2,
+            shape=(2,),
+            replace=False,
+        )
+        divs, mods = jnp.divmod(indices, size//2)
+        hero_pos = 1 + 2 * jnp.array([divs[0], mods[0]])
+        goal_pos = 1 + 2 * jnp.array([divs[1], mods[1]])
+
+        return Environment(
+            hero_pos=hero_pos,
+            goal_pos=goal_pos,
+            walls=walls,
+        )
+
+    @jax.jit
+    def render(self: Self) -> Float[Array, "size size 3"]:
+        size = self.walls.shape[0]
+        rgb = jnp.zeros((size, size, 3))
+        rgb = jnp.where(
+            self.walls[:, :, None],
+            jnp.array([.2, .2, .4]),
+            rgb,
+        )
+        rgb = rgb.at[
+            self.hero_pos[0],
+            self.hero_pos[1],
+        ].set(jnp.array((0,1,1)))
+        rgb = rgb.at[
+            self.goal_pos[0],
+            self.goal_pos[1],
+        ].set(jnp.array((1,0,1)))
+        return rgb
+
+    @jax.jit
+    def step(
+        self: Self,
+        action: Action,
+    ) -> Self:
+        # move the hero
+        deltas = jnp.array((
+            ( 0,  0),
+            (-1,  0),
+            ( 0, -1),
+            (+1,  0),
+            ( 0, +1),
+        ))
+        new_hero_pos = self.hero_pos + deltas[action]
+
+        # check for collisions
+        collision = self.walls[
+            new_hero_pos[0],
+            new_hero_pos[1],
+        ]
+        new_hero_pos = jnp.where(
+            collision,
+            self.hero_pos,
+            new_hero_pos,
+        )
+
+        return dataclasses.replace(self, hero_pos=new_hero_pos)
+
+    @jax.jit
+    def goal(self: Self) -> bool:
+        return jnp.all(self.hero_pos == self.goal_pos)
+
+
+@functools.partial(jax.jit, static_argnames=["size", "num_steps"])
+def walk(
+    key: PRNGKeyArray,
+    size: int,
+    num_steps: int,
+) -> Environment: # Environment[time]
+    # initialise environment
+    key_init, key = jax.random.split(key)
+    state = Environment.init(
+        key=key_init,
+        size=size,
+    )
+
+    def step(carry, _input):
+        key, state = carry
+        # find valid steps
+        probes = state.hero_pos + jnp.array((
+            ( 0,  0),
+            (-1,  0), 
+            ( 0, -1),
+            (+1,  0),
+            ( 0, +1),
+        ))
+        valid = ~state.walls[probes[:,0], probes[:,1]]
+        valid = valid.at[0].set(False)
+        # take a step
+        key_step, key = jax.random.split(key)
+        action = jax.random.choice(
+            key=key_step,
+            a=5,
+            shape=(),
+            p=valid,
+        )
+        state = state.step(action=action)
+        # reset if goal hit
+        reset = state.goal()
+        key_reset, key = jax.random.split(key)
+        new_state = Environment.init(
+            key=key_reset,
+            size=size,
+        )
+        next_state = jax.tree.map(
+            lambda old, new: jnp.where(reset, new, old),
+            state,
+            new_state,
+        )
+        return (key, next_state), next_state
+
+    _final_carry, next_states = jax.lax.scan(
+        step,
+        (key, state),
+        length=num_steps,
+    )
+
+    return jax.tree.map(
+        lambda l, ls: jnp.concatenate((l[None], ls), axis=0),
+        state,
+        next_states,
+    )
+
+
+# # # 
 # Maze generator
 
 
-@functools.partial(jax.jit, static_argnames=('size',))
+@functools.partial(jax.jit, static_argnames=["size"])
 def generate_maze(
     key: PRNGKeyArray,
-    size: int, # >= 3, odd
+    size: int, # >= 3 and odd
 ) -> Bool[Array, "size size"]:
-    """
-    Generate a `size` by `size` binary gridworld with a 1-wall thick border and
-    a random acyclic maze in the centre.
+    # grid graph nodes
+    S = size // 2
+    nodes = jnp.arange(S**2)
+    ngrid = nodes.reshape((S, S))
 
-    Consider the 'junction' squares
-        
-        (1,1), (1,3), ..., (1,w-1), (3,1), ..., (size-1,size-1).
-    
-    These squares form the nodes of a grid graph. This function constructs a
-    random spanning tree of this grid graph using Kruskal's algorithm, and
-    returns the corresponding binary matrix.
-    """
-    # validate dimensions (static)
-    assert size >= 3, "size must be at least 3"
-    assert size % 2 == 1, "size must be odd"
+    # grid graph edges
+    h_edges = jnp.stack((
+        ngrid[:,:-1].flatten(),
+        ngrid[:,1:].flatten(),
+    )) # int[2, n-S]
+    v_edges = jnp.stack((
+        ngrid[:-1,:].flatten(),
+        ngrid[1:,:].flatten(),
+    )) # int[2, n-S]
+    edges = jnp.concatenate(
+        (h_edges, v_edges),
+        axis=1,
+    ).transpose() # int[2(n-S), 2]
 
-    # assign each 'junction' in the grid an integer node id
-    H, W = size // 2, size // 2
-    nodes = jnp.arange(H * W)
-    ngrid = nodes.reshape((H, W))
+    # find random spanning tree
+    include_edges = kruskal_brute(key, nodes, edges) # int[n-1, 2]
+    # include_edges = kruskal_clever(key, nodes, edges) # int[n-1, 2]
 
-    # an edge between each pair of nodes (represented as a node id pair)
-    # note: there are (H-1)W + H(W-1) = 2HW - H - W edges
-    h_edges = jnp.stack((ngrid[:,:-1].flatten(), ngrid[:,1:].flatten()))
-    v_edges = jnp.stack((ngrid[:-1,:].flatten(), ngrid[1:,:].flatten()))
-    edges = jnp.concatenate((h_edges, v_edges), axis=-1).transpose()
-
-    # kruskal's random spanning tree algorithm
-    # include_edges = kruskal_clever(key, nodes, edges)
-    include_edges = kruskal_brute(key, nodes, edges)
-
-    # carve out junctions
+    # build grid and carving out junctions/nodes
     grid = jnp.ones((size, size), dtype=bool)
     grid = grid.at[1::2,1::2].set(False)
-    
+
     # carve out edges
-    def edge_pos(edge_ij: Int[Array, "2"]) -> Int[Array, "2"]:
-        divs, mods = jnp.divmod(edge_ij, W)
+    def edge_pos(edge_pair: Int[Array, "2"]) -> Int[Array, "2"]:
+        divs, mods = jnp.divmod(edge_pair, S)
         rows = 1 + 2 * divs
         cols = 1 + 2 * mods
         row = jnp.sum(rows) // 2
@@ -94,51 +288,34 @@ def kruskal_clever(
     nodes: Int[Array, "n"],
     edges: Int[Array, "m 2"],
 ) -> Int[Array, "n-1 2"]:
-    # initially each node is in its own subtree
     initial_parents = nodes
+    
+    edges = jax.random.permutation(
+        key=key,
+        x=edges,
+        axis=0,
+    )
 
-    # randomly shuffling the edges creates a random spanning tree
-    edges = jax.random.permutation(key, edges, axis=0)
-
-    # for each edge we decide whether to include it or skip it; tracking
-    # connected subtrees with a sophisticated union-find data structure.
-
-    def _find(x, parent):
-        """
-        Finds the root of x, while updating parents so that parent[i]
-        points one step closer to the root of i for next time.
-        """
-        px = parent[x]
-        def _find_body_fun(args):
+    def _find(x, parents):
+        px = parents[x]
+        def _find_body_fn(args):
             x, px, parents = args
             ppx = parents[px]
             return px, ppx, parents.at[x].set(ppx)
-        root, _, parent = jax.lax.while_loop(
+        root, _, parents = jax.lax.while_loop(
             lambda args: args[0] != args[1],
-            _find_body_fun,
-            (x, px, parent),
+            _find_body_fn,
+            (x, px, parents),
         )
-        return root, parent
-
-    def _union(root_x, root_y, parents):
-        """
-        Updates the root of x to be the root of y.
-        """
-        return parents.at[root_x].set(root_y)
+        return root, parents
 
     def try_edge(parents, edge):
         u, v = edge
         ru, parents = _find(u, parents)
         rv, parents = _find(v, parents)
         include_edge = (ru != rv)
-        parents = jax.lax.cond(
-            include_edge,
-            _union,
-            lambda rx, ry, ps: ps,
-            ru,
-            rv,
-            parents,
-        )
+        parents = parents.at[ru].set(rv)
+        # ^this is a no-op if include_edge is false!
         return parents, include_edge
 
     _final_parents, include_edge_mask = jax.lax.scan(
@@ -146,10 +323,10 @@ def kruskal_clever(
         initial_parents,
         edges,
     )
-
-    # extract the pairs corresponding to the `n-1` included edges
+    # include_edge_mask : bool[m]
+        
     include_edges = edges[
-        jnp.where(include_edge_mask, size=(nodes.size-1))
+        jnp.where(include_edge_mask, size=nodes.size-1)
     ]
     return include_edges
 
@@ -159,224 +336,51 @@ def kruskal_brute(
     nodes: Int[Array, "n"],
     edges: Int[Array, "m 2"],
 ) -> Int[Array, "n-1 2"]:
-    # initially each node is in its own subtree
     initial_parents = nodes
-
-    # randomly shuffling the edges creates a random spanning tree
-    edges = jax.random.permutation(key, edges, axis=0)
-
-    # for each edge we decide whether to include or skip it;
-    # track connected subtrees with a simple union-find data structure
+    
+    edges = jax.random.permutation(
+        key=key,
+        x=edges,
+        axis=0,
+    )
+    
     def try_edge(parents, edge):
         u, v = edge
         pu = parents[u]
         pv = parents[v]
         include_edge = (pu != pv)
-        new_parents = jax.lax.select(
-            include_edge & (parents == pv),
-            jnp.full_like(parents, pu),
+        parents = jnp.where(
+            include_edge,
+            jnp.where(
+                parents == pu,
+                pv,
+                parents,
+            ),
             parents,
         )
-        return new_parents, include_edge
-    
+        return parents, include_edge
+
     _final_parents, include_edge_mask = jax.lax.scan(
         try_edge,
         initial_parents,
         edges,
     )
+    
 
-    # extract the pairs corresponding to the `n-1` included edges
     include_edges = edges[
-        jnp.where(include_edge_mask, size=(nodes.size-1))
+        jnp.where(include_edge_mask, size=nodes.size-1)
     ]
     return include_edges
 
-
 # # # 
-# Environment class
+# Export to gif
 
 
-class Action(enum.IntEnum):
-    WAIT = 0 # do nothing
-    UP = 1 # move up
-    LEFT = 2 # move left
-    DOWN = 3 # move down
-    RIGHT = 4 # move right
-
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class Environment:
-    hero_pos: Int[Array, "2"]
-    goal_pos: Int[Array, "2"]
-    walls: Bool[Array, "size size"]
-
-    @functools.partial(jax.jit, static_argnames=("size",))
-    def init(key: PRNGKeyArray, size: int) -> Self:
-        # generate random wall layout
-        key_walls, key = jax.random.split(key)
-        walls = generate_maze(
-            key_walls,
-            size=size,
-        )
-
-        # generate random hero and goal positions
-        key_pos, key = jax.random.split(key)
-        indices = jax.random.choice(
-            key=key_pos,
-            a=(size//2)**2,
-            shape=(2,),
-            replace=False,
-        )
-        div, mod = jnp.divmod(indices, size//2)
-        hero_pos = 1 + 2*jnp.array([div[0], mod[0]])
-        goal_pos = 1 + 2*jnp.array([div[1], mod[1]])
-
-        # ensure these positions are free of walls
-        walls = walls.at[hero_pos[0], hero_pos[1]].set(False)
-        walls = walls.at[goal_pos[0], goal_pos[1]].set(False)
-
-        return Environment(
-            hero_pos=hero_pos,
-            goal_pos=goal_pos,
-            walls=walls,
-        )
-
-
-    @jax.jit
-    def render(self: Self) -> Float[Array, "size size 3"]:
-        size = self.walls.shape[0]
-        rgb = jnp.zeros((size, size, 3))
-        rgb = jnp.where(
-            self.walls[:,:,None],
-            jnp.array([.2,.2,.4]),
-            rgb,
-        )
-        rgb = rgb.at[
-            self.hero_pos[0],
-            self.hero_pos[1],
-        ].set(jnp.array([0,1,1]))
-        rgb = rgb.at[
-            self.goal_pos[0],
-            self.goal_pos[1],
-        ].set(jnp.array([1,0,1]))
-        return rgb
-
-    @jax.jit
-    def step(self: Self, action: Action) -> Self:
-        # move hero
-        deltas = jnp.array([
-            ( 0,  0), # stay
-            (-1,  0), # move up
-            ( 0, -1), # move left
-            (+1,  0), # move down
-            ( 0, +1), # move right
-        ])
-        try_hero_pos = self.hero_pos + deltas[action]
-        # check collisions
-        collision = self.walls[
-            try_hero_pos[0],
-            try_hero_pos[1],
-        ]
-        new_hero_pos = jnp.where(
-            collision,
-            self.hero_pos,
-            try_hero_pos,
-        )
-        self = dataclasses.replace(self, hero_pos=new_hero_pos)
-        return self
-
-
-    @jax.jit
-    def goal(self: Self) -> bool:
-        return jnp.all(self.hero_pos == self.goal_pos)
-        
-    
-@functools.partial(jax.jit, static_argnames=("size", "length",))
-def walk(
-    key: PRNGKeyArray,
-    size: int,
-    length: int,
-) -> Environment: # Environment[length]
-    # define the initial carry (key, state)
-    key_init, key = jax.random.split(key)
-    initial_state = Environment.init(key=key_init, size=size)
-    initial_carry = (key, initial_state)
-
-    # define a step of the random walk
-    def step(carry, input_):
-        key, state = carry
-        # pick a random valid action
-        probes = state.hero_pos + jnp.array([
-            ( 0,  0),
-            (-1,  0),
-            ( 0, -1),
-            (+1,  0),
-            ( 0, +1),
-        ])
-        invalid = state.walls[probes[:,0], probes[:,1]].at[0].set(True)
-        key_step, key = jax.random.split(key)
-        action = jax.random.choice(
-            key=key_step,
-            a=len(Action),
-            p=~invalid,
-            shape=(),
-        )
-        # take a step
-        state = state.step(action)
-        # reset if hit goal
-        key_reset, key = jax.random.split(key)
-        new_state = Environment.init(key=key_reset, size=size)
-        reset = state.goal()
-        state = jax.tree.map(
-            lambda old, new: jnp.where(reset, new, old),
-            state,
-            new_state,
-        )
-        # output
-        return (key, state), state
-
-    # scan the walk
-    final_carry, tail_states = jax.lax.scan(
-        step,
-        initial_carry,
-        length=length-1,
-    )
-    all_states = jax.tree.map(
-        lambda x, xs: jnp.concatenate([x[None], xs], axis=0),
-        initial_state,
-        tail_states,
-    )
-    return all_states
-
-
-# # # 
-# Entry point
-
-
-def main(
-    size: int = 25,
-    seed: int = 42,
+def save_animation(
+    state_bt: Environment, # Environment[batch time]
+    filename="output.gif",
 ):
-    key = jax.random.key(seed=seed)
-
-    print("initialise environment...")
-    key_init, key = jax.random.split(key)
-    state = Environment.init(key=key_init, size=size)
-    print(mp.image(state.render()))
-
-
-    print("scanned and vmapped random walk...")
-    statess = jax.vmap(walk, in_axes=(0,None,None))(
-        jax.random.split(key, 64),
-        size,
-        512,
-    )
-    print("done!")
-
-
-    print("rendering...")
-    imgss = jax.vmap(jax.vmap(Environment.render))(statess)
+    imgss = jax.vmap(jax.vmap(Environment.render))(state_bt)
     imgss = jnp.pad(
         imgss,
         pad_width=(
@@ -390,8 +394,8 @@ def main(
     grid = einops.rearrange(
         imgss,
         '(H W) t h w c -> t (H h) (W w) c',
-        H=8,
-        W=8,
+        H=16,
+        W=16,
     )
     grid = jnp.pad(
         grid,
@@ -404,7 +408,7 @@ def main(
     )
     frames = np.asarray(grid * 255, dtype=np.uint8)
     Image.fromarray(frames[0]).save(
-        "../gallery/lecture10.gif",
+        filename,
         format="gif",
         save_all=True,
         append_images=[Image.fromarray(f) for f in frames[1:]],
