@@ -154,219 +154,6 @@ def array_to_str(a: Byte[Array, "len(s)"]) -> str:
 
 @jax.tree_util.register_dataclass
 @dataclasses.dataclass
-class ByteSequenceModel:
-    decode_transformer: DecodeTransformer
-
-    @property
-    def max_context_length(self) -> int:
-        return self.decode_transformer.max_context_length
-
-    @jax.jit
-    def forward(
-        self: Self,
-        byte_array: Byte[Array, "t"],
-    ) -> Float[Array, "t 128"]:
-        tokens_one_hot = jax.nn.one_hot(byte_array, num_classes=128)
-        next_tokens_logits = self.decode_transformer.forward(tokens_one_hot)
-        next_tokens_probs = jax.nn.softmax(next_tokens_logits, axis=-1)
-        return next_tokens_probs
-
-    @jax.jit
-    def batch_forward(
-        self: Self,
-        byte_arrays: Byte[Array, "batch_size t"],
-    ) -> Float[Array, "batch_size t 128"]:
-        return jax.vmap(self.forward)(byte_arrays)
-
-    @functools.partial(
-        jax.jit,
-        static_argnames=["num_tokens_out"],
-    )
-    def complete(
-        self: Self,
-        key: PRNGKeyArray,
-        prompt_tokens: Byte[Array, "t"],
-        num_tokens_out: int,
-        inverse_temperature: float = 1.,
-    ) -> Byte[Array, "num_tokens_out"]:
-        num_tokens_in, = prompt_tokens.shape
-        
-        # initialise buffer
-        padding = max(num_tokens_out, self.max_context_length-num_tokens_in)
-        buffer = jnp.concatenate([
-            prompt_tokens,
-            jnp.zeros(padding, dtype=jnp.uint8),
-        ])
-        
-        # # loop across the buffer
-        # for i in range(num_tokens_out):
-        #     # slice
-        #     lo = max(0, num_tokens_in + i - self.max_context_length)
-        #     hi = num_tokens_in + i
-        #     window = buffer[lo:hi]
-        #     # predict next token
-        #     probs_next_token = self.forward(window)[-1]
-        #     key_generate, key = jax.random.split(key)
-        #     next_token = jax.random.choice(
-        #         key=key_generate,
-        #         a=128,
-        #         p=probs_next_token ** inverse_temperature,
-        #         shape=(),
-        #     ).astype(dtype=jnp.uint8)
-        #     # add token to buffer
-        #     buffer = buffer.at[num_tokens_in+i].set(next_token)
-        
-        def step(i: int, carry):
-            buffer, key = carry
-            # slice
-            lo = jnp.maximum(0, num_tokens_in + i - self.max_context_length)
-            length = self.max_context_length
-            window = jax.lax.dynamic_slice(
-                operand=buffer,
-                start_indices=(lo,),
-                slice_sizes=(length,),
-            )
-            cursor = num_tokens_in + i - lo - 1
-            # jax.debug.print("{} {} {}", i, window, cursor)
-            # predict next token
-            probs_next_token = self.forward(window)[cursor]
-            key_generate, key = jax.random.split(key)
-            next_token = jax.random.choice(
-                key=key_generate,
-                a=128,
-                p=probs_next_token ** inverse_temperature,
-                shape=(),
-            ).astype(dtype=jnp.uint8)
-            # add token to buffer
-            buffer = buffer.at[num_tokens_in+i].set(next_token)
-            return (buffer, key)
-        buffer, key = jax.lax.fori_loop(
-            lower=0,
-            upper=num_tokens_out,
-            body_fun=step,
-            init_val=(buffer, key),
-        )
-
-        # return completion
-        tokens_out = buffer[num_tokens_in:num_tokens_in+num_tokens_out]
-        return tokens_out
-
-
-    @staticmethod
-    @functools.partial(
-        jax.jit,
-        static_argnames=[
-            "max_context_length",
-            "embed_size",
-            "mlp_size",
-            "num_heads",
-            "num_blocks",
-        ],
-    )
-    def init(
-        key: PRNGKeyArray,
-        max_context_length: int,
-        embed_size: int,
-        mlp_size: int,
-        num_heads: int,
-        num_blocks: int,
-    ) -> Self:
-        return ByteSequenceModel(
-            decode_transformer=DecodeTransformer.init(
-                key=key,
-                num_inputs=128,
-                num_outputs=128,
-                max_context_length=max_context_length,
-                embed_size=embed_size,
-                mlp_size=mlp_size,
-                num_heads=num_heads,
-                num_blocks=num_blocks,
-            ),
-        )
-
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class DecodeTransformer:
-    token_embedding: LinearTransform
-    postn_embedding: LinearTransform
-    blocks: DecodeTransformerBlock # [num_blocks]
-    unembedding_layernorm: LayerNorm
-    unembedding: AffineTransform
-
-    @property
-    def max_context_length(self) -> int:
-        return self.postn_embedding.num_inputs
-
-    def forward(
-        self: Self,
-        ts: Float[Array, "t num_inputs"],
-    ) -> Float[Array, "t num_outputs"]:
-        context_length, _num_inputs = ts.shape
-
-        # embedding
-        x_semantic = jax.vmap(self.token_embedding.forward)(ts)
-        x_position = self.postn_embedding.weights[:context_length, :]
-        x = x_semantic + x_position # t embed_size
-
-        # apply the blocks
-        x, _ = jax.lax.scan(
-            lambda x, block: (block.forward(x), None),
-            x,
-            self.blocks,
-        )
-
-        # unembedding
-        x_norm = jax.vmap(self.unembedding_layernorm.forward)(x)
-        logits = jax.vmap(self.unembedding.forward)(x_norm)
-        return logits
-
-    @staticmethod
-    def init(
-        key: PRNGKeyArray,
-        num_inputs: int,
-        num_outputs: int,
-        max_context_length: int,
-        embed_size: int,
-        mlp_size: int,
-        num_heads: int,
-        num_blocks: int,
-    ) -> Self:
-        k1, k2, k3, k4, k5 = jax.random.split(key, 5)
-        return DecodeTransformer(
-            token_embedding=LinearTransform.init(
-                key=k1,
-                num_inputs=num_inputs,
-                num_outputs=embed_size,
-            ),
-            postn_embedding=LinearTransform.init(
-                key=k2,
-                num_inputs=max_context_length,
-                num_outputs=embed_size,
-            ),
-            blocks=jax.vmap(
-                DecodeTransformerBlock.init,
-                in_axes=(0,None,None,None),
-            )(
-                jax.random.split(k3, num_blocks),
-                embed_size,
-                num_heads,
-                mlp_size,
-            ),
-            unembedding_layernorm=LayerNorm.init(
-                key=k4,
-                size=embed_size,
-            ),
-            unembedding=AffineTransform.init(
-                key=k5,
-                num_inputs=embed_size,
-                num_outputs=num_outputs,
-            ),
-        )
-
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
 class AffineTransform:
     weights: Float[Array, "n_in n_out"]
     biases: Float[Array, "n_out"]
@@ -442,94 +229,6 @@ class LayerNorm:
         return LayerNorm(
             loc=jnp.zeros(size),
             scale=jnp.ones(size),
-        )
-
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class DecodeTransformerBlock:
-    layernorm1: LayerNorm
-    attention: MultiHeadedCausalSelfAttention
-    layernorm2: LayerNorm
-    compute: MLP
-
-    def forward(
-        self: Self,
-        x: Float[Array, "t embed_size"],
-    ) -> Float[Array, "t embed_size"]:
-        # residual attention
-        x_norm = jax.vmap(self.layernorm1.forward)(x)
-        x = x + self.attention.forward(x_norm)
-        # residual MLP
-        x_norm = jax.vmap(self.layernorm2.forward)(x)
-        x = x + jax.vmap(self.compute.forward)(x_norm)
-        return x
-
-    @staticmethod
-    def init(
-        key: PRNGKeyArray,
-        embed_size: int,
-        num_heads: int,
-        mlp_size: int,
-    ) -> Self:
-        k1, k2, k3, k4 = jax.random.split(key, 4)
-        return DecodeTransformerBlock(
-            layernorm1=LayerNorm.init(
-                key=k1,
-                size=embed_size,
-            ),
-            attention=MultiHeadedCausalSelfAttention.init(
-                key=k2,
-                embed_size=embed_size,
-                num_heads=num_heads,
-            ),
-            layernorm2=LayerNorm.init(
-                key=k3,
-                size=embed_size,
-            ),
-            compute=MLP.init(
-                key=k4,
-                num_inputs=embed_size,
-                num_hidden=mlp_size,
-                num_outputs=embed_size,
-            ),
-        )
-        
-
-@jax.tree_util.register_dataclass
-@dataclasses.dataclass
-class MLP:
-    layer1: AffineTransform # num_inputs -> num_hidden
-    layer2: AffineTransform # num_hidden -> num_outputs
-
-    def forward(
-        self: Self,
-        x: Float[Array, "num_inputs"],
-    ) -> Float[Array, "num_outputs"]:
-        x = self.layer1.forward(x)
-        x = jax.nn.relu(x)
-        x = self.layer2.forward(x)
-        return x
-
-    @staticmethod
-    def init(
-        key: PRNGKeyArray,
-        num_inputs: int,
-        num_hidden: int,
-        num_outputs: int,
-    ) -> Self:
-        k1, k2 = jax.random.split(key)
-        return MLP(
-            layer1=AffineTransform.init(
-                key=k1,
-                num_inputs=num_inputs,
-                num_outputs=num_hidden,
-            ),
-            layer2=AffineTransform.init(
-                key=k2,
-                num_inputs=num_hidden,
-                num_outputs=num_outputs,
-            ),
         )
 
 
@@ -630,6 +329,306 @@ class MultiHeadedCausalSelfAttention:
             num_heads=num_heads,
         )
     
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class MLP:
+    layer1: AffineTransform # num_inputs -> num_hidden
+    layer2: AffineTransform # num_hidden -> num_outputs
+
+    def forward(
+        self: Self,
+        x: Float[Array, "num_inputs"],
+    ) -> Float[Array, "num_outputs"]:
+        x = self.layer1.forward(x)
+        x = jax.nn.relu(x)
+        x = self.layer2.forward(x)
+        return x
+
+    @staticmethod
+    def init(
+        key: PRNGKeyArray,
+        num_inputs: int,
+        num_hidden: int,
+        num_outputs: int,
+    ) -> Self:
+        k1, k2 = jax.random.split(key)
+        return MLP(
+            layer1=AffineTransform.init(
+                key=k1,
+                num_inputs=num_inputs,
+                num_outputs=num_hidden,
+            ),
+            layer2=AffineTransform.init(
+                key=k2,
+                num_inputs=num_hidden,
+                num_outputs=num_outputs,
+            ),
+        )
+
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class DecodeTransformerBlock:
+    layernorm1: LayerNorm
+    attention: MultiHeadedCausalSelfAttention
+    layernorm2: LayerNorm
+    compute: MLP
+
+    def forward(
+        self: Self,
+        x: Float[Array, "t embed_size"],
+    ) -> Float[Array, "t embed_size"]:
+        # residual attention
+        x_norm = jax.vmap(self.layernorm1.forward)(x)
+        x = x + self.attention.forward(x_norm)
+        # residual MLP
+        x_norm = jax.vmap(self.layernorm2.forward)(x)
+        x = x + jax.vmap(self.compute.forward)(x_norm)
+        return x
+
+    @staticmethod
+    def init(
+        key: PRNGKeyArray,
+        embed_size: int,
+        num_heads: int,
+        mlp_size: int,
+    ) -> Self:
+        k1, k2, k3, k4 = jax.random.split(key, 4)
+        return DecodeTransformerBlock(
+            layernorm1=LayerNorm.init(
+                key=k1,
+                size=embed_size,
+            ),
+            attention=MultiHeadedCausalSelfAttention.init(
+                key=k2,
+                embed_size=embed_size,
+                num_heads=num_heads,
+            ),
+            layernorm2=LayerNorm.init(
+                key=k3,
+                size=embed_size,
+            ),
+            compute=MLP.init(
+                key=k4,
+                num_inputs=embed_size,
+                num_hidden=mlp_size,
+                num_outputs=embed_size,
+            ),
+        )
+        
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class DecodeTransformer:
+    token_embedding: LinearTransform
+    postn_embedding: LinearTransform
+    blocks: DecodeTransformerBlock # [num_blocks]
+    unembedding_layernorm: LayerNorm
+    unembedding: AffineTransform
+
+    @property
+    def max_context_length(self) -> int:
+        return self.postn_embedding.num_inputs
+
+    def forward(
+        self: Self,
+        ts: Float[Array, "t num_inputs"],
+    ) -> Float[Array, "t num_outputs"]:
+        context_length, _num_inputs = ts.shape
+
+        # embedding
+        x_semantic = jax.vmap(self.token_embedding.forward)(ts)
+        x_position = self.postn_embedding.weights[:context_length, :]
+        x = x_semantic + x_position # t embed_size
+
+        # apply the blocks
+        x, _ = jax.lax.scan(
+            lambda x, block: (block.forward(x), None),
+            x,
+            self.blocks,
+        )
+
+        # unembedding
+        x_norm = jax.vmap(self.unembedding_layernorm.forward)(x)
+        logits = jax.vmap(self.unembedding.forward)(x_norm)
+        return logits
+
+    @staticmethod
+    def init(
+        key: PRNGKeyArray,
+        num_inputs: int,
+        num_outputs: int,
+        max_context_length: int,
+        embed_size: int,
+        mlp_size: int,
+        num_heads: int,
+        num_blocks: int,
+    ) -> Self:
+        k1, k2, k3, k4, k5 = jax.random.split(key, 5)
+        return DecodeTransformer(
+            token_embedding=LinearTransform.init(
+                key=k1,
+                num_inputs=num_inputs,
+                num_outputs=embed_size,
+            ),
+            postn_embedding=LinearTransform.init(
+                key=k2,
+                num_inputs=max_context_length,
+                num_outputs=embed_size,
+            ),
+            blocks=jax.vmap(
+                DecodeTransformerBlock.init,
+                in_axes=(0,None,None,None),
+            )(
+                jax.random.split(k3, num_blocks),
+                embed_size,
+                num_heads,
+                mlp_size,
+            ),
+            unembedding_layernorm=LayerNorm.init(
+                key=k4,
+                size=embed_size,
+            ),
+            unembedding=AffineTransform.init(
+                key=k5,
+                num_inputs=embed_size,
+                num_outputs=num_outputs,
+            ),
+        )
+
+
+@jax.tree_util.register_dataclass
+@dataclasses.dataclass
+class ByteSequenceModel:
+    decode_transformer: DecodeTransformer
+
+    @property
+    def max_context_length(self) -> int:
+        return self.decode_transformer.max_context_length
+
+    @jax.jit
+    def forward(
+        self: Self,
+        byte_array: Byte[Array, "t"],
+    ) -> Float[Array, "t 128"]:
+        tokens_one_hot = jax.nn.one_hot(byte_array, num_classes=128)
+        next_tokens_logits = self.decode_transformer.forward(tokens_one_hot)
+        next_tokens_probs = jax.nn.softmax(next_tokens_logits, axis=-1)
+        return next_tokens_probs
+
+    @jax.jit
+    def batch_forward(
+        self: Self,
+        byte_arrays: Byte[Array, "batch_size t"],
+    ) -> Float[Array, "batch_size t 128"]:
+        return jax.vmap(self.forward)(byte_arrays)
+
+    @functools.partial(
+        jax.jit,
+        static_argnames=["num_tokens_out"],
+    )
+    def complete(
+        self: Self,
+        key: PRNGKeyArray,
+        prompt_tokens: Byte[Array, "t"],
+        num_tokens_out: int,
+        inverse_temperature: float = 1.,
+    ) -> Byte[Array, "num_tokens_out"]:
+        num_tokens_in, = prompt_tokens.shape
+        
+        # initialise buffer
+        padding = max(num_tokens_out, self.max_context_length-num_tokens_in)
+        buffer = jnp.concatenate([
+            prompt_tokens,
+            jnp.zeros(padding, dtype=jnp.uint8),
+        ])
+        
+        # # loop across the buffer
+        # for i in range(num_tokens_out):
+        #     # slice
+        #     lo = max(0, num_tokens_in + i - self.max_context_length)
+        #     hi = num_tokens_in + i
+        #     window = buffer[lo:hi]
+        #     # predict next token
+        #     probs_next_token = self.forward(window)[-1]
+        #     key_generate, key = jax.random.split(key)
+        #     next_token = jax.random.choice(
+        #         key=key_generate,
+        #         a=128,
+        #         p=probs_next_token ** inverse_temperature,
+        #         shape=(),
+        #     ).astype(dtype=jnp.uint8)
+        #     # add token to buffer
+        #     buffer = buffer.at[num_tokens_in+i].set(next_token)
+        
+        def step(i: int, carry):
+            buffer, key = carry
+            # slice
+            lo = jnp.maximum(0, num_tokens_in + i - self.max_context_length)
+            length = self.max_context_length
+            window = jax.lax.dynamic_slice(
+                operand=buffer,
+                start_indices=(lo,),
+                slice_sizes=(length,),
+            )
+            cursor = num_tokens_in + i - lo - 1
+            # jax.debug.print("{} {} {}", i, window, cursor)
+            # predict next token
+            probs_next_token = self.forward(window)[cursor]
+            key_generate, key = jax.random.split(key)
+            next_token = jax.random.choice(
+                key=key_generate,
+                a=128,
+                p=probs_next_token ** inverse_temperature,
+                shape=(),
+            ).astype(dtype=jnp.uint8)
+            # add token to buffer
+            buffer = buffer.at[num_tokens_in+i].set(next_token)
+            return (buffer, key)
+        buffer, key = jax.lax.fori_loop(
+            lower=0,
+            upper=num_tokens_out,
+            body_fun=step,
+            init_val=(buffer, key),
+        )
+
+        # return completion
+        tokens_out = buffer[num_tokens_in:num_tokens_in+num_tokens_out]
+        return tokens_out
+
+    @staticmethod
+    @functools.partial(
+        jax.jit,
+        static_argnames=[
+            "max_context_length",
+            "embed_size",
+            "mlp_size",
+            "num_heads",
+            "num_blocks",
+        ],
+    )
+    def init(
+        key: PRNGKeyArray,
+        max_context_length: int,
+        embed_size: int,
+        mlp_size: int,
+        num_heads: int,
+        num_blocks: int,
+    ) -> Self:
+        return ByteSequenceModel(
+            decode_transformer=DecodeTransformer.init(
+                key=key,
+                num_inputs=128,
+                num_outputs=128,
+                max_context_length=max_context_length,
+                embed_size=embed_size,
+                mlp_size=mlp_size,
+                num_heads=num_heads,
+                num_blocks=num_blocks,
+            ),
+        )
+
 
 # # # 
 # Cross entropy functions
