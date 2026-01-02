@@ -39,7 +39,7 @@ For full syllabus information, see the
     <td align="center"><img src="gallery/lecture08.gif" height="156px"><br>Lecture 08</td>
     <td align="center"><img src="gallery/lecture09.gif" height="156px"><br>Lecture 09</td>
     <td align="center"><img src="gallery/lecture10.gif" height="156px"><br>Lecture 10</td>
-    <td align="center"><img src="gallery/placeholder2.jpg" height="156px"><br>Lecture 11</td>
+    <td align="center"><img src="gallery/lecture11.gif" height="156px"><br>Lecture 11</td>
   </tr>
 </tbody>
 </table>
