@@ -14,38 +14,83 @@ The code examples and recording of video lectures are a work in progress:
 
 * Code examples implemented: 12/12.
 * Video lectures recorded: 11/12.
-* Video lectures edited: 1/12.
+* Video lectures edited: 2/12.
 
 [[Course website](https://far.in.net/hijax)]
 | [[YouTube playlist](https://www.youtube.com/playlist?list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr)]
-
-<!--TODO: Link lecture recordings.-->
+| [[Set-up video](https://www.youtube.com/watch?v=tbG-ePhoqbA&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr)]
 
 <table>
 <tbody>
   <tr>
     <td align="center">
-      <a href="https://youtu.be/HJeeMnLs_Z0">
+      <a href="https://youtu.be/HJeeMnLs_Z0&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
         <img src="gallery/lecture00.png" height="156px">
         <br>
         Lecture 00
       </a>
     </td>
-    <td align="center"><img src="gallery/lecture01.gif" height="156px"><br>Lecture 01</td>
-    <td align="center"><img src="gallery/lecture02.gif" height="156px"><br>Lecture 02</td>
-    <td align="center"><img src="gallery/lecture03.gif" height="156px"><br>Lecture 03</td>
+    <td align="center">
+      <a href="https://youtu.be/sXQHNZcqIPg&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
+        <img src="gallery/lecture01.gif" height="156px">
+        <br>
+        Lecture 01
+      </a>
+    </td>
+    <td align="center">
+        <img src="gallery/lecture02.gif" height="156px">
+        <br>
+        Lecture 02
+    </td>
+    <td align="center">
+        <img src="gallery/lecture03.gif" height="156px">
+        <br>
+        Lecture 03
+    </td>
   </tr>
   <tr>
-    <td align="center"><img src="gallery/lecture04.gif" height="156px"><br>Lecture 04</td>
-    <td align="center"><img src="gallery/lecture05.gif" height="156px"><br>Lecture 05</td>
-    <td align="center"><img src="gallery/lecture06.gif" height="156px"><br>Lecture 06</td>
-    <td align="center"><img src="gallery/lecture07.gif" height="156px"><br>Lecture 07</td>
+    <td align="center">
+        <img src="gallery/lecture04.gif" height="156px">
+        <br>
+        Lecture 04
+    </td>
+    <td align="center">
+        <img src="gallery/lecture05.gif" height="156px">
+        <br>
+        Lecture 05
+    </td>
+    <td align="center">
+        <img src="gallery/lecture06.gif" height="156px">
+        <br>
+        Lecture 06
+    </td>
+    <td align="center">
+        <img src="gallery/lecture07.gif" height="156px">
+        <br>
+        Lecture 07
+    </td>
   </tr>
   <tr>
-    <td align="center"><img src="gallery/lecture08.gif" height="156px"><br>Lecture 08</td>
-    <td align="center"><img src="gallery/lecture09.gif" height="156px"><br>Lecture 09</td>
-    <td align="center"><img src="gallery/lecture10.gif" height="156px"><br>Lecture 10</td>
-    <td align="center"><img src="gallery/lecture11.gif" height="156px"><br>Lecture 11</td>
+    <td align="center">
+        <img src="gallery/lecture08.gif" height="156px">
+        <br>
+        Lecture 08
+    </td>
+    <td align="center">
+        <img src="gallery/lecture09.gif" height="156px">
+        <br>
+        Lecture 09
+    </td>
+    <td align="center">
+        <img src="gallery/lecture10.gif" height="156px">
+        <br>
+        Lecture 10
+    </td>
+    <td align="center">
+        <img src="gallery/lecture11.gif" height="156px">
+        <br>
+        Lecture 11
+    </td>
   </tr>
 </tbody>
 </table>
