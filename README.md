@@ -14,17 +14,23 @@ The code examples and recording of video lectures are a work in progress:
 
 * Code examples implemented: 12/12.
 * Video lectures recorded: 11/12.
-* Video lectures edited: 0/12.
+* Video lectures edited: 1/12.
 
-For full syllabus information, see the
-  [course website](https://far.in.net/hijax).
+[[Course website](https://far.in.net/hijax)]
+| [[YouTube playlist](https://www.youtube.com/playlist?list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr)]
 
 <!--TODO: Link lecture recordings.-->
 
 <table>
 <tbody>
   <tr>
-    <td align="center"><img src="gallery/lecture00.png" height="156px"><br>Lecture 00</td>
+    <td align="center">
+      <a href="https://youtu.be/HJeeMnLs_Z0">
+        <img src="gallery/lecture00.png" height="156px">
+        <br>
+        Lecture 00
+      </a>
+    </td>
     <td align="center"><img src="gallery/lecture01.gif" height="156px"><br>Lecture 01</td>
     <td align="center"><img src="gallery/lecture02.gif" height="156px"><br>Lecture 02</td>
     <td align="center"><img src="gallery/lecture03.gif" height="156px"><br>Lecture 03</td>
