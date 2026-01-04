@@ -24,16 +24,16 @@ The code examples and recording of video lectures are a work in progress:
 <tbody>
   <tr>
     <td align="center">
+      <img src="gallery/lecture00.png" height="156px">
+      <br>
       <a href="https://youtu.be/HJeeMnLs_Z0&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="gallery/lecture00.png" height="156px">
-        <br>
         Lecture 00
       </a>
     </td>
     <td align="center">
+      <img src="gallery/lecture01.gif" height="156px">
+      <br>
       <a href="https://youtu.be/sXQHNZcqIPg&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="gallery/lecture01.gif" height="156px">
-        <br>
         Lecture 01
       </a>
     </td>
