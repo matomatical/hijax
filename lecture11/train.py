@@ -766,7 +766,7 @@ def ppo_loss_fn(
     proximity_eps: float,
     critic_coeff: float,
     entropy_coeff: float,
-) -> tuple[float, dict[str, float]]:
+) -> float:
     # reshape the data to have one batch dimension
     transitions, advantages = jax.tree.map(
         lambda x: einops.rearrange(
@@ -917,7 +917,6 @@ def ppo_train_step(
         opt_state,
         rewards.mean(),
     )
-
 
 
 # # # 
