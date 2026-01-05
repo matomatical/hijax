@@ -28,10 +28,40 @@ The code examples and recording of video lectures are a work in progress:
 
 # Syllabus
 
-The course covers the following topics. Each lecture includes a demonstration which I walk through line by line, along with a challenge where you take what you have learned and implement something yourself.
+The course comprises the following:
 
-For all lecture recordings in one place, see
-  [this YouTube playlist](https://www.youtube.com/playlist?list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr).
+* **12 Lectures**
+  ([YouTube playlist](https://www.youtube.com/playlist?list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr))**:**
+  Recorded coding demonstrations where we walk line by line through
+  implementing a deep learning projects.
+
+  The lectures are organised into four parts:
+
+  * [**Overture**](#overture) (1 lecture)**:** A taste of what is to come.
+
+  * [**Act I: Basics**](#act-i-basics) (5 lectures)**:** Fundamental JAX
+    programming concepts.
+
+  * [**Act II: Acceleration**](#act-ii-acceleration) (5 lecture)**:** The ins
+    and outs of just-in-time compilation.
+
+  * [**Finale**](#finale) (1 lecture)**:** In which we bring it all together.
+  
+  You can follow along using the starting code and solutions found in this
+  repository.
+
+* **12 Challenges:** Each lecture ends with a challenge, which is a small
+  open-ended project for you to work on using similar techniques to those
+  demonstrated in the lecture.
+
+  You should aim to complete each challenge after following the lecture, to
+  solidify your understanding of the new concepts.
+
+* **1+ Projects:** After finishing the 12 lectures and challenges, you will be
+  ready for a more ambitious project of your own. There are some suggestions
+  [below](#projects), mainly replicating deep learning papers in JAX or diving
+  into low-level optimisation details.
+
 
 ## Overture
 
