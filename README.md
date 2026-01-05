@@ -14,7 +14,7 @@ The code examples and recording of video lectures are a work in progress:
 
 * Code examples implemented: 12/12.
 * Video lectures recorded: 11/12.
-* Video lectures edited: 2/12.
+* Video lectures edited: 4/12.
 
 [[Course website](https://far.in.net/hijax)]
 | [[YouTube playlist](https://www.youtube.com/playlist?list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr)]
@@ -38,57 +38,61 @@ The code examples and recording of video lectures are a work in progress:
       </a>
     </td>
     <td align="center">
-        <img src="gallery/lecture02.gif" height="156px">
-        <br>
+      <img src="gallery/lecture02.gif" height="156px">
+      <br>
+      <a href="https://youtu.be/O9RQbC23Kf0&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
         Lecture 02
+      </a>
     </td>
     <td align="center">
-        <img src="gallery/lecture03.gif" height="156px">
-        <br>
+      <img src="gallery/lecture03.gif" height="156px">
+      <br>
+      <a href="https://youtu.be/dpUaDZyBBX8&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
         Lecture 03
+      </a>
     </td>
   </tr>
   <tr>
     <td align="center">
-        <img src="gallery/lecture04.gif" height="156px">
-        <br>
+      <img src="gallery/lecture04.gif" height="156px">
+      <br>
         Lecture 04
     </td>
     <td align="center">
-        <img src="gallery/lecture05.gif" height="156px">
-        <br>
+      <img src="gallery/lecture05.gif" height="156px">
+      <br>
         Lecture 05
     </td>
     <td align="center">
-        <img src="gallery/lecture06.gif" height="156px">
-        <br>
+      <img src="gallery/lecture06.gif" height="156px">
+      <br>
         Lecture 06
     </td>
     <td align="center">
-        <img src="gallery/lecture07.gif" height="156px">
-        <br>
+      <img src="gallery/lecture07.gif" height="156px">
+      <br>
         Lecture 07
     </td>
   </tr>
   <tr>
     <td align="center">
-        <img src="gallery/lecture08.gif" height="156px">
-        <br>
+      <img src="gallery/lecture08.gif" height="156px">
+      <br>
         Lecture 08
     </td>
     <td align="center">
-        <img src="gallery/lecture09.gif" height="156px">
-        <br>
+      <img src="gallery/lecture09.gif" height="156px">
+      <br>
         Lecture 09
     </td>
     <td align="center">
-        <img src="gallery/lecture10.gif" height="156px">
-        <br>
+      <img src="gallery/lecture10.gif" height="156px">
+      <br>
         Lecture 10
     </td>
     <td align="center">
-        <img src="gallery/lecture11.gif" height="156px">
-        <br>
+      <img src="gallery/lecture11.gif" height="156px">
+      <br>
         Lecture 11
     </td>
   </tr>
