@@ -294,115 +294,7 @@ In which we bring together everything we have learned to accelerate an end-to-en
 </table>
 
 
-Why learn JAX?
---------------
-
-I'm a deep learning scientist. I try to understand the natural principles
-underpinning the structure and function of learned neural networks. In the
-course of my research, I have to train, test, and dissect many neural networks,
-large and small. Neural networks are essentially just arrays of floating point
-parameters, so the best way to interact with them is using an array programming
-library. That is where JAX comes in.
-
-[JAX](https://jax.readthedocs.io/) is a Python library for writing and
-transforming array programs. The JAX API for writing array programs is similar
-to that of NumPy, but the JAX API for *transforming* array programs is utterly
-unique, effortlessly powerful, and delightfully elegant.
-
-Since switching from using PyTorch to using JAX for my research, I have
-personally noticed the following benefits.
-
-1. **JAX is fast.** The main selling point of JAX is its integration with the
-   XLA array program compiler. XLA gives a speed boost for even small-scale JAX
-   programs, which run multiple times faster than uncompiled array programs,
-   even on the same processors.
-
-2. **JAX is portable.** JAX isn't just useful on GPUs. It's equally happy to
-   optimise code I want to run on my M2 Air. When I do need to reach for more
-   compute, I don't have to cough up for a GPU node, I can take advantage of
-   Google's TPU Research Cloud programme and run my code on a free TPU cluster.
-
-3. **JAX is elegant.** Deep learning researchers describe their insights with
-   the powerful abstractions forged over hundreds of years by mathematicians.
-   The JAX library's design celebrates mathematical abstractions, rather than
-   over-fitting to some subset of methods that happen to be in vogue.
-
-4. **JAX is good for your code.** It can be challenging to comply with the
-   various restrictions JAX enforces (immutability, pure functions, static
-   shapes). But even if they weren't justified by the powerful optimisations
-   they enable, these restrictions are all good ways to make code more
-   explicit, readable, and, ultimately, less wrong.
-
-JAX isn't perfect. But it's far and away the closest to my conception of the
-ideal array programming library. Plus, it's under active development by a team
-that has shown they can get the big picture *so right,* so the future looks
-bright.
-
-All else equal, I'd choose JAX for my projects, every time. Of course, all else
-is not always equal. Here are some reasons people might not want to switch to
-JAX.
-
-1. **JAX is less popular.** It hasn't been around as long as PyTorch, which has
-   a larger and more well-resourced ecosystem. If you switch to JAX, you might
-   have to write more code yourself when the paper you want to replicate or the
-   architecture you want to try provides a PyTorch codebase. Your colleagues
-   might refuse to port their existing code to work with JAX.
-
-   *But you are not alone.* While still small *relative* to the PyTorch
-   ecosystem, the JAX ecosystem is decent in *absolute* terms today. There are
-   many 
-     [awesome JAX](https://github.com/n2cholas/awesome-jax)
-   tools out there and I see new projects posted every week. Maybe I will see
-   your contribution one day?
-
-2. **JAX is hard to learn.** Using JAX requires thinking about array programs
-   in new ways. You will encounter challenges you have no idea how to solve,
-   and this will make you feel like you're a beginner programmer again. This is
-   difficult, and there aren't many learning resources out there that convey
-   the "JAX mindset."
-   
-   *That changes, now.* I went through this journey myself. It took me months
-   to crack the "JAX mindset." But I did eventually crack it, and now I have
-   made this course---including programming demonstrations drawn from real
-   challenges I came up against when learning JAX.
-
-I can feel which way the wind is blowing. Can you?
-
-Prerequisites
--------------
-
-Programming:
-
-* Prior experience programming in Python
-  (e.g., collections, dataclasses, functools, type annotations).
-* Prior experience programming in NumPy.
-  * NumPy [basics](https://numpy.org/doc/stable/user/absolute_beginners.html)
-    tutorial should be sufficient.
-* Prior experience with einops.
-  * Einops [basics](https://einops.rocks/1-einops-basics/)
-    tutorial more than sufficient.
-
-Machine learning:
-
-* Basic vector calculus and optimisation (stochastic gradient descent).
-* Basic deep learning architectures (MLP, CNN, Transformer).
-  * [3Blue1Brown Season 3](https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi)
-    should be sufficient (skip chapter 4).
-
-*Helpful/optional (we will cover what is required):*
-
-* Basic reinforcement learning
-    (Markov decision process formalism, policy gradients).
-* Prior experience programming in, e.g., Rust
-    (the concept of immutability).
-* Prior experience programming in, e.g., Haskell
-    (the concepts of pure functions, mapping, folding).
-
-You will need a Python environment (but not necessarily a GPU) if you want to
-code along during the workshops.
-
-Projects
---------
+## Projects
 
 The best way to consolidate your understanding is to implement your own
 non-trivial JAX project. As a suggestion, you could choose one of the following
@@ -479,8 +371,39 @@ here:
     [[repo](https://github.com/rohan-hitchcock/hijax)].
 
 
-Getting started
----------------
+# Prerequisites
+
+Programming:
+
+* Prior experience programming in Python
+  (e.g., collections, dataclasses, functools, type annotations).
+* Prior experience programming in NumPy.
+  * NumPy [basics](https://numpy.org/doc/stable/user/absolute_beginners.html)
+    tutorial should be sufficient.
+* Prior experience with einops.
+  * Einops [basics](https://einops.rocks/1-einops-basics/)
+    tutorial more than sufficient.
+
+Machine learning:
+
+* Basic vector calculus and optimisation (stochastic gradient descent).
+* Basic deep learning architectures (MLP, CNN, Transformer).
+  * [3Blue1Brown Season 3](https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi)
+    should be sufficient (skip chapter 4).
+
+*Helpful/optional (we will cover what is required):*
+
+* Basic reinforcement learning
+    (Markov decision process formalism, policy gradients).
+* Prior experience programming in, e.g., Rust
+    (the concept of immutability).
+* Prior experience programming in, e.g., Haskell
+    (the concepts of pure functions, mapping, folding).
+
+You will need a Python environment (but not necessarily a GPU) if you want to
+code along during the workshops.
+
+# Getting started
 
 Watch the
   [getting started video](https://www.youtube.com/watch?v=tbG-ePhoqbA&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr),
@@ -515,8 +438,80 @@ Note: That command will install JAX to use the CPU.
 From there, you should be able to follow along with each video tutorial.
 
 
-Beyond the fundamentals
------------------------
+# Why learn JAX?
+
+I'm a deep learning scientist. I try to understand the natural principles
+underpinning the structure and function of learned neural networks. In the
+course of my research, I have to train, test, and dissect many neural networks,
+large and small. Neural networks are essentially just arrays of floating point
+parameters, so the best way to interact with them is using an array programming
+library. That is where JAX comes in.
+
+[JAX](https://jax.readthedocs.io/) is a Python library for writing and
+transforming array programs. The JAX API for writing array programs is similar
+to that of NumPy, but the JAX API for *transforming* array programs is utterly
+unique, effortlessly powerful, and delightfully elegant.
+
+Since switching from using PyTorch to using JAX for my research, I have
+personally noticed the following benefits.
+
+1. **JAX is fast.** The main selling point of JAX is its integration with the
+   XLA array program compiler. XLA gives a speed boost for even small-scale JAX
+   programs, which run multiple times faster than uncompiled array programs,
+   even on the same processors.
+
+2. **JAX is portable.** JAX isn't just useful on GPUs. It's equally happy to
+   optimise code I want to run on my M2 Air. When I do need to reach for more
+   compute, I don't have to cough up for a GPU node, I can take advantage of
+   Google's TPU Research Cloud programme and run my code on a free TPU cluster.
+
+3. **JAX is elegant.** Deep learning researchers describe their insights with
+   the powerful abstractions forged over hundreds of years by mathematicians.
+   The JAX library's design celebrates mathematical abstractions, rather than
+   over-fitting to some subset of methods that happen to be in vogue.
+
+4. **JAX is good for your code.** It can be challenging to comply with the
+   various restrictions JAX enforces (immutability, pure functions, static
+   shapes). But even if they weren't justified by the powerful optimisations
+   they enable, these restrictions are all good ways to make code more
+   explicit, readable, and, ultimately, less wrong.
+
+JAX isn't perfect. But it's far and away the closest to my conception of the
+ideal array programming library. Plus, it's under active development by a team
+that has shown they can get the big picture *so right,* so the future looks
+bright.
+
+All else equal, I'd choose JAX for my projects, every time. Of course, all else
+is not always equal. Here are some reasons people might not want to switch to
+JAX.
+
+1. **JAX is less popular.** It hasn't been around as long as PyTorch, which has
+   a larger and more well-resourced ecosystem. If you switch to JAX, you might
+   have to write more code yourself when the paper you want to replicate or the
+   architecture you want to try provides a PyTorch codebase. Your colleagues
+   might refuse to port their existing code to work with JAX.
+
+   *But you are not alone.* While still small *relative* to the PyTorch
+   ecosystem, the JAX ecosystem is decent in *absolute* terms today. There are
+   many 
+     [awesome JAX](https://github.com/n2cholas/awesome-jax)
+   tools out there and I see new projects posted every week. Maybe I will see
+   your contribution one day?
+
+2. **JAX is hard to learn.** Using JAX requires thinking about array programs
+   in new ways. You will encounter challenges you have no idea how to solve,
+   and this will make you feel like you're a beginner programmer again. This is
+   difficult, and there aren't many learning resources out there that convey
+   the "JAX mindset."
+   
+   *That changes, now.* I went through this journey myself. It took me months
+   to crack the "JAX mindset." But I did eventually crack it, and now I have
+   made this course---including programming demonstrations drawn from real
+   challenges I came up against when learning JAX.
+
+I can feel which way the wind is blowing. Can you?
+
+# Beyond the fundamentals
 
 Mastering the fundamentals of JAX is valuable because vanilla JAX is a powerful
 tool for accelerated Python programming.
