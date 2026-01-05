@@ -23,7 +23,7 @@ The code examples and recording of video lectures are a work in progress:
 
 * Code examples implemented: 12/12.
 * Video lectures recorded: 11/12.
-* Video lectures edited and published: 4/12.
+* Video lectures edited and published: 5/12.
 
 
 # Syllabus
@@ -134,8 +134,9 @@ In which we learn the elementary components of JAX programs while implementing a
       <img src="gallery/lecture04.gif" height="156px">
     </td>
     <td align="center">
-      Lecture 04
-      (coming soon...)
+      <a href="https://youtu.be/dpUaDZyBBX8&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
+        <img src="https://img.youtube.com/vi/gq3zLXWsI70/0.jpg" height="156px">
+      </a>
     </td>
     <td>
       <p><strong>Hi, automatic vectorisation!</strong> Vectorisation with <code>jax.vmap</code>.</p>
