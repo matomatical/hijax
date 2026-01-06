@@ -23,7 +23,7 @@ The code examples and recording of video lectures are a work in progress:
 
 * Code examples implemented: 12/12.
 * Video lectures recorded: 11/12.
-* Video lectures edited and published: 7/12.
+* Video lectures edited and published: 8/12.
 
 
 # Syllabus
@@ -231,8 +231,9 @@ In which we explore various aspects of just-in-time compilation and the kinds of
       <img src="gallery/lecture07.gif" height="156px">
     </td>
     <td align="center">
-      Lecture 07
-      (coming soon...)
+      <a href="https://youtu.be/xb8FN-4Acto&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
+        <img src="https://img.youtube.com/vi/xb8FN-4Acto/0.jpg" height="156px">
+      </a>
     </td>
     <td>
       <p><strong>Hi, loop acceleration!</strong> Looping computations with <code>jax.lax.scan</code>.</p>
