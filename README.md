@@ -12,7 +12,7 @@ for deep learning researchers.
 
 *Note:
   This page is for the online edition of Hi, JAX! See also:
-    [2024 edition](hijax-2024).
+    [2024 edition](https://far.in.net/hijax-2024).
   Visualisations/animations made with
     [matthewplotlib](https://github.com/matomatical/matthewplotlib).
   Banner image by Nano Banana Pro.*
