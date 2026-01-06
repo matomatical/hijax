@@ -23,8 +23,7 @@ The code examples and recording of video lectures are a work in progress:
 
 * Code examples implemented: 12/12.
 * Video lectures recorded: 11/12.
-* Video lectures edited and published: 10/12.
-
+* Video lectures edited and published: 11/12.
 
 # Syllabus
 
@@ -285,13 +284,14 @@ In which we explore various aspects of just-in-time compilation and the kinds of
       <img src="gallery/lecture10.gif" height="156px">
     </td>
     <td align="center">
-      Lecture 10
-      (coming soon...)
+      <a href="https://youtu.be/phY3XijGHcM&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
+        <img src="https://img.youtube.com/vi/phY3XijGHcM/0.jpg" height="156px">
+      </a>
     </td>
     <td>
       <p><strong>Hi, algorithms!</strong> Performance considerations for branching computation and parallelism, <code>jax.lax.while</code>.</p>
       <ul>
-        <li><p>Demonstration: Comparative implementation of Kruskall’s minimum spanning tree algorithm with different union–find data structures.</p></li>
+        <li><p>Demonstration: Comparative implementation of Kruskal’s minimum spanning tree algorithm with different union–find data structures.</p></li>
         <li><p>Challenge: Determine solvability of a maze by implementing and accelerating <a href="https://en.wikipedia.org/wiki/Depth-first_search">depth-first search</a>. Solve the maze by implementing and accelerating <a href="https://en.wikipedia.org/wiki/Breadth-first_search">breadth-first search</a>. For a harder challenge, implement and accelerate the <a href="https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm">Floyd–Warshall algorithm</a> to compute all-pairs shortest paths.</p></li>
       </ul>
     </td>
@@ -316,6 +316,7 @@ In which we bring together everything we have learned to accelerate an end-to-en
     </td>
     <td align="center">
       Lecture 11
+      <br>
       (coming soon...)
     </td>
     <td>
