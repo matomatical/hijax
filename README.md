@@ -23,7 +23,7 @@ The code examples and recording of video lectures are a work in progress:
 
 * Code examples implemented: 12/12.
 * Video lectures recorded: 11/12.
-* Video lectures edited and published: 8/12.
+* Video lectures edited and published: 9/12.
 
 
 # Syllabus
@@ -249,8 +249,9 @@ In which we explore various aspects of just-in-time compilation and the kinds of
       <img src="gallery/lecture08.gif" height="156px">
     </td>
     <td align="center">
-      Lecture 08
-      (coming soon...)
+      <a href="https://youtu.be/Db-0dcdsPXs&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
+        <img src="https://img.youtube.com/vi/Db-0dcdsPXs/0.jpg" height="156px">
+      </a>
     </td>
     <td>
       <p><strong>Hi, static arguments!</strong> Compile errors due to non-static shapes, flagging static arguments.</p>
