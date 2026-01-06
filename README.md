@@ -267,8 +267,8 @@ In which we explore various aspects of just-in-time compilation and the kinds of
       <img src="gallery/lecture09.gif" height="156px">
     </td>
     <td align="center">
-      <a href="https://youtu.be/ERgKHgmfRsc&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/ERgKHgmfRsc/0.jpg" height="156px">
+      <a href="https://youtu.be/939ymw03viI&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
+        <img src="https://img.youtube.com/vi/939ymw03viI/0.jpg" height="156px">
       </a>
     </td>
     <td>
