@@ -10,6 +10,8 @@ Welcome to "Hi, JAX!", an introduction to vanilla
   [JAX](https://jax.readthedocs.io/)
 for deep learning researchers.
 
+<img src="gallery/lecture00.png" height="75px"><img src="gallery/lecture01.gif" height="75px"><img src="gallery/lecture02.gif" height="75px"><img src="gallery/lecture03.gif" height="75px"><img src="gallery/lecture06.gif" height="75px"><img src="gallery/lecture07.gif" height="75px"><img src="gallery/lecture08.gif" height="75px"><img src="gallery/lecture09.gif" height="75px"><img src="gallery/lecture10.gif" height="75px"><img src="gallery/lecture11.gif" height="75px">
+  
 Contents:
 
 * [Why learn JAX?](#why-learn-jax)
@@ -27,13 +29,16 @@ Contents:
 
 Notes:
 
-* Banner image design by Gemini 3 Pro and generation by Nano Banana Pro (by the
-  way, both of these models were trained with JAX). 
-* This page is for the *online edition* of Hi, JAX! See also:
-    [2024 edition](https://far.in.net/hijax-2024).
 * This course is a work in progress. Here is the current status:
   * Code examples implemented: 12/12.
   * Videos recorded, edited, published: 11/12.
+* This page is for the *online edition* of Hi, JAX! See also:
+    [2024 edition](https://far.in.net/hijax-2024).
+* Banner image design by Gemini 3 Pro and generation by Nano Banana Pro (by the
+  way, both of these models were trained with JAX). 
+* Animations are mostly made with
+    [matthewplotlib](https://github.com/matomatical/matthewplotlib),
+  a Python terminal plotting library in development.
 
 # Why learn JAX?
 
