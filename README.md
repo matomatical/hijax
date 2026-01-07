@@ -28,8 +28,8 @@ Notes:
 
 * Banner image design by Gemini 3 Pro and generation by Nano Banana Pro (by the
   way, both of these models were trained with JAX). 
-* This page is for the online edition of Hi, JAX! See also:
-    [2024 edition](https://far.in.net/hijax-2024).*
+* This page is for the *online edition* of Hi, JAX! See also:
+    [2024 edition](https://far.in.net/hijax-2024).
 * This course is a work in progress. Here is the current status:
   * Code examples implemented: 12/12.
   * Videos recorded, edited, published: 11/12.
