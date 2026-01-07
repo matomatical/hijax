@@ -283,7 +283,7 @@ In which we explore various aspects of just-in-time compilation and the kinds of
       <p><strong>Hi, branching computation!</strong> Stateful environment API, conditional computation with <code>jax.lax.select</code>, <code>jax.numpy.where</code>, and expression-level branching.</p>
       <ul>
         <li><p>Demonstration: Implement a simple grid-world maze environment.</p></li>
-        <li><p>Alternative challenge: Add a locked door and a key to the grid-world environment.</p></li>
+        <li><p>Challenge: Add a locked door and a key to the grid-world environment.</p></li>
       </ul>
     </td>
   </tr>
@@ -301,7 +301,9 @@ In which we explore various aspects of just-in-time compilation and the kinds of
       <p><strong>Hi, algorithms!</strong> Performance considerations for branching computation and parallelism, <code>jax.lax.while</code>.</p>
       <ul>
         <li><p>Demonstration: Comparative implementation of Kruskal’s minimum spanning tree algorithm with different union–find data structures.</p></li>
-        <li><p>Challenge: Determine solvability of a maze by implementing and accelerating <a href="https://en.wikipedia.org/wiki/Depth-first_search">depth-first search</a>. Solve the maze by implementing and accelerating <a href="https://en.wikipedia.org/wiki/Breadth-first_search">breadth-first search</a>. For a harder challenge, implement and accelerate the <a href="https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm">Floyd–Warshall algorithm</a> to compute all-pairs shortest paths.</p></li>
+        <li><p>Challenge: Determine solvability of a maze by implementing and accelerating <a href="https://en.wikipedia.org/wiki/Depth-first_search">depth-first search</a>.
+          Or, solve the maze by implementing and accelerating <a href="https://en.wikipedia.org/wiki/Breadth-first_search">breadth-first search</a>.
+          Or, for a harder challenge, implement and accelerate the <a href="https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm">Floyd–Warshall algorithm</a> to compute all-pairs shortest paths.</p></li>
       </ul>
     </td>
   </tr>
