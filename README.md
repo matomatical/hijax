@@ -7,16 +7,16 @@
 </h1>
 
 <p align="center">
-  <img src="gallery/lecture00.png" height="75px">
-  <img src="gallery/lecture01.gif" height="75px">
-  <img src="gallery/lecture02.gif" height="75px">
-  <img src="gallery/lecture03.gif" height="75px">
-  <img src="gallery/lecture06.gif" height="75px">
-  <img src="gallery/lecture07.gif" height="75px">
-  <img src="gallery/lecture08.gif" height="75px">
-  <img src="gallery/lecture09.gif" height="75px">
-  <img src="gallery/lecture10.gif" height="75px">
-  <img src="gallery/lecture11.gif" height="75px">
+  <img src="gallery/lecture00.png" height="75px" width="75px">
+  <img src="gallery/lecture01.gif" height="75px" width="75px">
+  <img src="gallery/lecture02.gif" height="75px" width="75px">
+  <img src="gallery/lecture03.gif" height="75px" width="75px">
+  <img src="gallery/lecture06.gif" height="75px" width="75px">
+  <img src="gallery/lecture07.gif" height="75px" width="75px">
+  <img src="gallery/lecture08.gif" height="75px" width="75px">
+  <img src="gallery/lecture09.gif" height="75px" width="75px">
+  <img src="gallery/lecture10.gif" height="75px" width="75px">
+  <img src="gallery/lecture11.gif" height="75px" width="75px">
 </p>
       
 Welcome to "Hi, JAX!", an introduction to vanilla
