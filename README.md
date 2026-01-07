@@ -36,6 +36,7 @@ Contents:
   * [Projects](#projects)
 * [Getting started](#getting-started)
 * [Beyond the fundamentals](#beyond-the-fundamentals)
+* [Project gallery](#project-gallery)
 * [Citing Hi, JAX!](#citing-hi-jax)
 * [Credits](#credits)
 
@@ -524,21 +525,7 @@ advanced self-study project instead:
     then find a hardware and hyperparameter configuration for some learning
     task where parallelism leads to an order of magnitude speed-up.
 
-Whatever project you select, please let me know if you complete it! And if you
-like, I would be delighted list your name and a link to your completed project
-here:
-
-* *2024.07.27*
-  [Billy Snikkers](https://www.billysnikkers.net/)
-  completed a custom project (training a neural network to implement the update
-  rule from Conway's game of life)
-    [[repo](https://github.com/blinkybool/hijax/tree/main/32hr_challenge)].
-
-* *2024.08.07*
-  [Rohan Hitchcock](https://rohanhitchcock.com/)
-  completed project 4 (Hi, singular learning theory!)
-    [[repo](https://github.com/rohan-hitchcock/hijax)].
-
+Whatever project you select, please let me know if you complete it!
 
 # Getting started
 
@@ -690,6 +677,25 @@ good resources to know about.
   Matthew Johnson (JAX developer)
   and a [PyCon tutorial](https://www.youtube.com/watch?v=yDYiiVVkBXY) from
   Simon Pressler.
+
+# Project gallery
+
+Completed projects:
+
+* *2024.07.27*
+  [Billy Snikkers](https://www.billysnikkers.net/)
+  completed a custom project (training a neural network to implement the update
+  rule from Conway's game of life)
+    [[repo](https://github.com/blinkybool/hijax/tree/main/32hr_challenge)].
+
+* *2024.08.07*
+  [Rohan Hitchcock](https://rohanhitchcock.com/)
+  completed project 4 (Hi, singular learning theory!)
+    [[repo](https://github.com/rohan-hitchcock/hijax)].
+
+If you complete a project, please let me know, I would be delighted list your
+name, website, and a link to your completed project here if you are happy with
+that.
 
 # Citing Hi, JAX!
 
