@@ -22,6 +22,8 @@ Contents:
   * [Projects](#projects)
 * [Getting started](#getting-started)
 * [Beyond the fundamentals](#beyond-the-fundamentals)
+* [Citing Hi, JAX!](#citing-hi-jax)
+* [Credits](#credits)
 
 Notes:
 
@@ -673,5 +675,37 @@ good resources to know about.
   Matthew Johnson (JAX developer)
   and a [PyCon tutorial](https://www.youtube.com/watch?v=yDYiiVVkBXY) from
   Simon Pressler.
+
+# Citing Hi, JAX!
+
+Let me be clear that the code developed as part of this course is often
+simplified for pedagogical reasons and may not be directly appropriate for deep
+learning research, and certainly the same goes for production.
+
+However, if for some reason you find the code or teaching materials useful in
+your academic work, and you want to cite "Hi, JAX!", you can use the following
+bibtex:
+
+```
+@misc{farrugia2026hijax,
+    title={{Hi, JAX!} An introduction to {JAX} for deep learning research},
+    author={Matthew Farrugia-Roberts},
+    year={2026},
+    note={Access via \href{https://github.com/matomatical/hijax}{github.com/matomatical}},
+}
+```
+
+# Credits
+
+This course was created by Matthew Farrugia-Roberts.
+
+I would like to thank the participants in the 2024 metauni cohort for their
+encouragement in me developing the course. I would particularly like to thank
+Billy Snikkers for all the great questions and feedback.
+
+I would like to thank members of the orchard and OAISI communities who
+encouraged me while I was preparing the revised syllabus and recording the
+videos. I would particularly like to thank Louis Thomson for the recording
+equipment and advice and for support with design and YouTube.
 
 Bye!
