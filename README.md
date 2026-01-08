@@ -206,11 +206,11 @@ In which we first meet JAX and get a taste of how it differs from NumPy.
 <tbody>
   <tr>
     <td align="center">
-      <img src="gallery/lecture00.png" height="156px">
+      <img src="gallery/lecture00.png" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/HJeeMnLs_Z0&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/HJeeMnLs_Z0/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/HJeeMnLs_Z0/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -237,11 +237,11 @@ In which we learn the elementary components of JAX programs while implementing a
 <tbody>
   <tr>
     <td align="center">
-      <img src="gallery/lecture01.gif" height="156px">
+      <img src="gallery/lecture01.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/sXQHNZcqIPg&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/sXQHNZcqIPg/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/sXQHNZcqIPg/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -255,11 +255,11 @@ In which we learn the elementary components of JAX programs while implementing a
 
   <tr>
     <td align="center">
-      <img src="gallery/lecture02.gif" height="156px">
+      <img src="gallery/lecture02.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/O9RQbC23Kf0&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/O9RQbC23Kf0/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/O9RQbC23Kf0/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -273,11 +273,11 @@ In which we learn the elementary components of JAX programs while implementing a
 
   <tr>
     <td align="center">
-      <img src="gallery/lecture03.gif" height="156px">
+      <img src="gallery/lecture03.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/dpUaDZyBBX8&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/dpUaDZyBBX8/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/dpUaDZyBBX8/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -291,11 +291,11 @@ In which we learn the elementary components of JAX programs while implementing a
 
   <tr>
     <td align="center">
-      <img src="gallery/lecture04.gif" height="156px">
+      <img src="gallery/lecture04.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/dpUaDZyBBX8&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/gq3zLXWsI70/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/gq3zLXWsI70/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -309,11 +309,11 @@ In which we learn the elementary components of JAX programs while implementing a
 
   <tr>
     <td align="center">
-      <img src="gallery/lecture05.gif" height="156px">
+      <img src="gallery/lecture05.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/Su40NhzNeTQ&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/Su40NhzNeTQ/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/Su40NhzNeTQ/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -340,11 +340,11 @@ In which we explore various aspects of just-in-time compilation and the kinds of
 <tbody>
   <tr>
     <td align="center">
-      <img src="gallery/lecture06.gif" height="156px">
+      <img src="gallery/lecture06.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/9Af1jguxNeQ&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/9Af1jguxNeQ/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/9Af1jguxNeQ/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -358,11 +358,11 @@ In which we explore various aspects of just-in-time compilation and the kinds of
 
   <tr>
     <td align="center">
-      <img src="gallery/lecture07.gif" height="156px">
+      <img src="gallery/lecture07.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/xb8FN-4Acto&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/xb8FN-4Acto/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/xb8FN-4Acto/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -376,11 +376,11 @@ In which we explore various aspects of just-in-time compilation and the kinds of
 
   <tr>
     <td align="center">
-      <img src="gallery/lecture08.gif" height="156px">
+      <img src="gallery/lecture08.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/Db-0dcdsPXs&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/Db-0dcdsPXs/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/Db-0dcdsPXs/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -394,11 +394,11 @@ In which we explore various aspects of just-in-time compilation and the kinds of
 
   <tr>
     <td align="center">
-      <img src="gallery/lecture09.gif" height="156px">
+      <img src="gallery/lecture09.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/939ymw03viI&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/939ymw03viI/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/939ymw03viI/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -412,11 +412,11 @@ In which we explore various aspects of just-in-time compilation and the kinds of
 
   <tr>
     <td align="center">
-      <img src="gallery/lecture10.gif" height="156px">
+      <img src="gallery/lecture10.gif" height="128px">
     </td>
     <td align="center">
       <a href="https://youtu.be/phY3XijGHcM&list=PLjl5MxRQg5xrQagVEKk9J5eWWZf6AmYSr">
-        <img src="https://img.youtube.com/vi/phY3XijGHcM/0.jpg" height="156px">
+        <img src="https://img.youtube.com/vi/phY3XijGHcM/mqdefault.jpg" height="128px">
       </a>
     </td>
     <td>
@@ -445,7 +445,7 @@ In which we bring together everything we have learned to accelerate an end-to-en
 <tbody>
   <tr>
     <td align="center">
-      <img src="gallery/lecture11.gif" height="156px">
+      <img src="gallery/lecture11.gif" height="128px">
     </td>
     <td align="center">
       Lecture 11
