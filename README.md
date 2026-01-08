@@ -7,16 +7,16 @@
 </h1>
 
 <p align="center">
-  <img src="gallery/lecture00.png" height="75px" width="75px">
-  <img src="gallery/lecture01.gif" height="75px" width="75px">
-  <img src="gallery/lecture02.gif" height="75px" width="75px">
-  <img src="gallery/lecture03.gif" height="75px" width="75px">
-  <img src="gallery/lecture06.gif" height="75px" width="75px">
-  <img src="gallery/lecture07.gif" height="75px" width="75px">
-  <img src="gallery/lecture08.gif" height="75px" width="75px">
-  <img src="gallery/lecture09.gif" height="75px" width="75px">
-  <img src="gallery/lecture10.gif" height="75px" width="75px">
-  <img src="gallery/lecture11.gif" height="75px" width="75px">
+  <img src="gallery/lecture00.png" width="75px" height="75px">
+  <img src="gallery/lecture01.gif" width="75px" height="75px">
+  <img src="gallery/lecture02.gif" width="75px" height="75px">
+  <img src="gallery/lecture03.gif" width="75px" height="75px">
+  <img src="gallery/lecture06.gif" width="75px" height="75px">
+  <img src="gallery/lecture07.gif" width="75px" height="75px">
+  <img src="gallery/lecture08.gif" width="75px" height="75px">
+  <img src="gallery/lecture09.gif" width="75px" height="75px">
+  <img src="gallery/lecture10.gif" width="75px" height="75px">
+  <img src="gallery/lecture11.gif" width="75px" height="75px">
 </p>
       
 Welcome to "Hi, JAX!", an introduction to vanilla
@@ -722,14 +722,14 @@ This course was created by Matthew Farrugia-Roberts.
 
 I would like to thank the participants in the
   [2024 metauni cohort](https://far.in.net/hijax-2024)
-for their encouragement while I developed the course. I would particularly
-like to thank Billy Snikkers for all the great questions and feedback.
+for their encouragement while I developed the course. I would particularly like
+to thank Billy Snikkers for all the great questions and feedback.
 
 I would like to thank members of the OAISI and orchard communities for their
 encouragement while I was preparing the revised syllabus and recording the
-videos for this edition of the course. I would particularly like to thank
-Louis Thomson for the recording equipment and advice and for support with
-design and YouTube, and Billy Snikkers for yet more great feedback.
+videos for this edition of the course. I would particularly like to thank Louis
+Thomson for the recording equipment, recording advice, support with design, and
+support with YouTube; and Billy Snikkers for yet more great feedback.
 
 ---
 
