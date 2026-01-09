@@ -467,9 +467,13 @@ In which we bring together everything we have learned to accelerate an end-to-en
 ## Projects
 
 The best way to consolidate your understanding is to implement your own
-non-trivial JAX project. As a suggestion, you could choose one of the following
-research replication projects on the topics of mechanistic interpretability and
-the science of deep learning.
+non-trivial JAX project. You can choose whatever topic excited you the most
+and meets your specific learning goals. This section offers some suggestions.
+
+One of the best ways to learn to do research is to replicate papers. If you
+are interested in AI safety and understanding deep learning like I am, you could
+choose one of the following research replication projects on topics in mechanistic
+interpretability and the science of deep learning.
 
 1.  **Hi, mechanistic interpretability!**
     Take some image model we have trained and then switch to optimising over
@@ -507,8 +511,8 @@ the science of deep learning.
     replicate the black line from figures 4(left) and H.1 (bottom left) from
       [[6](https://arxiv.org/abs/2507.03068)].
 
-For those with a need for more speed and scale, you may be interested in this
-advanced self-study project instead:
+For those with a need for more speed and scale, you may be interested in these
+advanced self-study projects instead:
 
 7.  **Hi, profiling tools!**
     Learn how to use JAX
@@ -525,7 +529,9 @@ advanced self-study project instead:
     then find a hardware and hyperparameter configuration for some learning
     task where parallelism leads to an order of magnitude speed-up.
 
-Whatever project you select, please let me know if you complete it!
+Whatever project you select, please let me know if you complete it! I would
+love to hear about your progress. Plus, if you like, I can list your project
+in the [project gallery](#project-gallery).
 
 # Getting started
 
